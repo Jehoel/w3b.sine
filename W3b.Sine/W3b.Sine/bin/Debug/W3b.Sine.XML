@@ -1,0 +1,101 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>W3b.Sine</name>
+    </assembly>
+    <members>
+        <member name="T:W3b.Sine.BigNumDec">
+            <summary>Implements arbitrary-precsision arithmetic with a decimal byte array.</summary>
+        </member>
+        <member name="T:W3b.Sine.BigNum">
+            <summary>An immutable arbitary-precision number class.</summary>
+        </member>
+        <member name="M:W3b.Sine.BigNum.Divide(W3b.Sine.BigNum)">
+            <summary>Divides this instance by the divisor, returning the quotient.</summary>
+        </member>
+        <member name="M:W3b.Sine.BigNum.Modulo(W3b.Sine.BigNum)">
+            <summary>Divides this instance by the divisor, returning the remainder.</summary>
+        </member>
+        <member name="M:W3b.Sine.BigNum.Negate">
+            <summary>Inverts this instance's sign</summary>
+        </member>
+        <member name="M:W3b.Sine.BigNum.Absolute">
+            <summary>Returns the norm of the number</summary>
+        </member>
+        <member name="M:W3b.Sine.BigNum.CreateInstance">
+            <summary>Creates an instance of BigNum set to zero.</summary>
+        </member>
+        <member name="P:W3b.Sine.BigNum.ImplName">
+            <summary>Gets the name of the implementation, for rejecting incompatible BigNum types.</summary>
+        </member>
+        <member name="F:W3b.Sine.BigNumDec._exp">
+            <summary>The exponential part.</summary>
+            <remarks>Auto-initialised to 0.</remarks>
+        </member>
+        <member name="F:W3b.Sine.BigNumDec._printPositiveSign">
+            <summary>Whether to print + in ToString if the value is positive.</summary>
+            <remarks>Auto-initialised to 0.</remarks>
+        </member>
+        <member name="F:W3b.Sine.BigNumDec._divisionDigits">
+            <summary>Number of digits to get when dividing.</summary>
+        </member>
+        <member name="F:W3b.Sine.BigNumDec._toStringLimit">
+            <summary>Number of digits to display when calling ToString().</summary>
+        </member>
+        <member name="M:W3b.Sine.BigNumDec.#ctor">
+            <summary>Creates a new BigNumDec with an empty data list. Not identical to zero.</summary>
+        </member>
+        <member name="M:W3b.Sine.BigNumDec.Msd(System.Int32)">
+            <summary>Nabs the most significant digits of this number. If <paramref name="count" /> is greater than the length of the number it pads zeros.</summary>
+            <param name="count">Number of digits to return</param>
+        </member>
+        <member name="M:W3b.Sine.BigNumDec.AlignExponent(W3b.Sine.BigNumDec)">
+            <summary>Makes the exponent values of both numbers equal by padding zeros.</summary>
+        </member>
+        <member name="M:W3b.Sine.BigNumDec.Normalise">
+            <summary>Removes chaff elements from the internal list.</summary>
+        </member>
+        <member name="T:W3b.Sine.ExpressionStack">
+            <summary>Represents a simple expression stack (LIFO).</summary>
+        </member>
+        <member name="M:W3b.Sine.ExpressionStack.Evaluate">
+            <summary>Evaluates the stacked expressions in a FIFO (aka LILO) order.</summary>
+        </member>
+        <member name="M:W3b.Sine.ExpressionStack.Push(W3b.Sine.Expression)">
+            <summary>Pushes an expression onto the stack.</summary>
+        </member>
+        <member name="M:W3b.Sine.ExpressionStack.Pop">
+            <summary>Removes the last entered expression from the stack.</summary>
+        </member>
+        <member name="P:W3b.Sine.ExpressionStack.PrintOperations">
+            <summary>Set to True to print operations to Console as they happen.</summary>
+        </member>
+        <member name="F:W3b.Sine.MathFunction.Fac">
+            <summary>Factorial</summary>
+        </member>
+        <member name="F:W3b.Sine.MathFunction.Pow">
+            <summary>Power</summary>
+        </member>
+        <member name="F:W3b.Sine.MathFunction.Sin">
+            <summary>Sine</summary>
+        </member>
+        <member name="F:W3b.Sine.MathFunction.Cos">
+            <summary>Cosine</summary>
+        </member>
+        <member name="F:W3b.Sine.MathFunction.Tan">
+            <summary>Tan</summary>
+        </member>
+        <member name="F:W3b.Sine.MathFunction.Csc">
+            <summary>Cosec</summary>
+        </member>
+        <member name="F:W3b.Sine.MathFunction.Sec">
+            <summary>Secant</summary>
+        </member>
+        <member name="F:W3b.Sine.MathFunction.Cot">
+            <summary>Cotangent</summary>
+        </member>
+        <member name="M:W3b.Sine.Math.CalculatePi(System.Int32)">
+            <summary>Calculates Pi, but is inaccuate beyond 4 digits for some reason. Not recommended.</summary>
+        </member>
+    </members>
+</doc>
