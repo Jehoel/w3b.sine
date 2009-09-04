@@ -1,6 +1,6 @@
 ﻿
-Microsoft Visual Studio Solution File, Format Version 9.00
-# Visual Studio 2005
+Microsoft Visual Studio Solution File, Format Version 10.00
+# Visual Studio 2008
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "W3b.Sine", "W3b.Sine\W3b.Sine.csproj", "{2D8D532C-D1A5-429D-8B9B-2CC5C2D8E5FE}"
 EndProject
 Global
