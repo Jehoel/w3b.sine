@@ -1,242 +1,609 @@
-/*
-*  BSD 3-clause license:
-* 
-* Copyright (c) 2008, David Rees / David "W3bbo" Rees / http://www.softicide.com / http://www.w3bdevil.com
-* All rights reserved.
-*
-* Redistribution and use in source and binary forms, with or without
-* modification, are permitted provided that the following conditions are met:
-*     * Redistributions of source code must retain the above copyright
-*       notice, this list of conditions and the following disclaimer.
-*     * Redistributions in binary form must reproduce the above copyright
-*       notice, this list of conditions and the following disclaimer in the
-*       documentation and/or other materials provided with the distribution.
-*     * Neither the name of the David Rees nor the
-*       names of its contributors may be used to endorse or promote products
-*       derived from this software without specific prior written permission.
-*
-* THIS SOFTWARE IS PROVIDED BY David Rees ``AS IS'' AND ANY
-* EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-* WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-* DISCLAIMED. IN NO EVENT SHALL David Rees BE LIABLE FOR ANY
-* DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-* (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-* LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-* ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-* (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-* SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
-
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Text;
 
+using S    = System.Runtime.Serialization;
+using N    = System.Globalization.NumberStyles;
 using Cult = System.Globalization.CultureInfo;
+using P    = W3b.Sine.Precedence;
+
+// TODO: Update this class with the latest from Anolis
+// and look into functions
 
 namespace W3b.Sine {
 	
-	/// <summary>Represents a simple expression stack (LIFO).</summary>
-	public class ExpressionStack {
-		
-		private Stack<Expression> _expressions;
-		
-		private static Boolean _printOperations;
-		
-		private BigNum _numberSoFar;
-		
-		public ExpressionStack() {
-			_expressions = new Stack<Expression>();
-		}
-		
-		/// <summary>Evaluates the stacked expressions in a FIFO (aka LILO) order.</summary>
-		public BigNum Evaluate() {
-			
-			_numberSoFar = BigNum.CreateInstance();
-			
-			Expression[] expressions = _expressions.ToArray();
-			
-			for(int i=expressions.Length-1;i>=0;i--) {
-				
-				Expression expr = expressions[i];
-				
-				BigNum val = null;
-				if( expr.Value != Double.NegativeInfinity ) 
-					val = BigNum.CreateInstance( expr.Value );
-				
-				switch(expr.Function) {
-					case MathFunction.Add:
-						_numberSoFar = _numberSoFar.Add( val );          break;
-					case MathFunction.Sub:
-						_numberSoFar = _numberSoFar.Add( val.Negate() ); break;
-					case MathFunction.Mul:
-						_numberSoFar = _numberSoFar.Multiply( val );     break;
-					case MathFunction.Div:
-						_numberSoFar = _numberSoFar.Divide( val );       break;
-					case MathFunction.Mod:
-						_numberSoFar = _numberSoFar.Modulo( val );       break;
-					case MathFunction.Pow:
-						_numberSoFar = _numberSoFar.Power( Convert.ToInt32( expr.Value ) ); break;
-					case MathFunction.Fac:
-						_numberSoFar = _numberSoFar.Factorial();         break;
-					
-					case MathFunction.Sin:
-						_numberSoFar = _numberSoFar.Sine();              break;
-					case MathFunction.Cos:
-						_numberSoFar = _numberSoFar.Cosine();            break;
-					case MathFunction.Tan:
-						_numberSoFar = _numberSoFar.Tangent();           break;
-					case MathFunction.Csc:
-						_numberSoFar = _numberSoFar.Cosec();             break;
-					case MathFunction.Sec:
-						_numberSoFar = _numberSoFar.Secant();            break;
-					case MathFunction.Cot:
-						_numberSoFar = _numberSoFar.Cotangent();         break;
-				}
-				
-				if(_printOperations)
-					Console.WriteLine( "<-- " + expr.ToString() + " = " + _numberSoFar.ToString() );
-				
-			}
-			
-			//_expressions.Clear();
-			
-			return _numberSoFar;
-			
-		}
-		
-		/// <summary>Pushes an expression onto the stack.</summary>
-		public void Push(Expression expression) {
-			_expressions.Push(expression);
-			if(_printOperations) Console.WriteLine("--> " + expression.ToString() );
-		}
-		
-		/// <summary>Removes the last entered expression from the stack.</summary>
-		public Expression Pop() {
-			Expression expr = _expressions.Pop();
-			if(_printOperations) Console.WriteLine("<-- " + expr.ToString() );
-			return expr;
-		}
-		
-		public void Clear() {
-			_expressions.Clear();
-			if(_printOperations) Console.WriteLine("<-- All");
-		}
-		
-		/// <summary>Set to True to print operations to Console as they happen.</summary>
-		public static Boolean PrintOperations {
-			get { return _printOperations; }
-			set { _printOperations = value; }
-		}
-	}
+	// TODO:
+		// * Add support for boolean operators &&, ||, ^^, !
+		// * Add support for functions, e.g. sin(), a function can be defined in the symbol table: with that functions' expression as the dictionary value
+			// this is a bit hard. I'll leave it for now
+		// I think booleans can be supported by having false == 0 and true == non-zero
 	
+	/// <summary>A C# implementation of Tom Niemann's Operator Precedence Parsing system ( http://epaperpress.com/oper/index.html ).</summary>
 	public class Expression {
 		
-		private MathFunction _function  = MathFunction.None;
-		private Double   _value     = Double.NegativeInfinity;
+		// The precedence table; beautiful, isn't it?
+/*
+		S = Shift. The input takes precedence over what's at the top of the stack
+		R = Reduce. The stack should be evaluated before the input is processed.
+		      |                                   input                                                |
+		      | +   -   *   /   ^   M   ,     (   )     ==  !=  <   <=  >   >=    &&  ||  !   ^^    $  |
+		   ---| --  --  --  --  --  --  --    --  --    --  --  --  --  --  --    --  --  --  --    -- |
+		   +  | R   R   S   S   S   S   R     S   R     R   R   R   R   R   R     R   R   S   R     R  |
+		   -  | R   R   S   S   S   S   R     S   R     R   R   R   R   R   R     R   R   S   R     R  |
+		   *  | R   R   R   R   S   S   R     S   R     R   R   R   R   R   R     R   R   S   R     R  |
+		   /  | R   R   R   R   S   S   R     S   R     R   R   R   R   R   R     R   R   S   R     R  |
+		   ^  | R   R   R   R   S   S   R     S   R     R   R   R   R   R   R     R   R   S   R     R  |
+		   M  | R   R   R   R   R   S   R     S   R     R   R   R   R   R   R     R   R   S   R     R  |
+		   ,  | R   R   R   R   R   R   E4    R   R     R   R   R   R   R   R     R   R   R   R     E4 |
+		      |                                                                                        |
+		   (  | S   S   S   S   S   S   S     S   S     S   S   S   S   S   S     S   S   S   S     E1 |
+		s  )  | R   R   R   R   R   R   E4    E2  R     R   R   R   R   R   R     R   R   S   R     R  |
+		t                                                                                              |
+		a  == | R   R   R   R   R   R   R     S   R     R   R   R   R   R   R     R   R   R   R     R  |
+		c  != | R   R   R   R   R   R   R     S   R     R   R   R   R   R   R     R   R   R   R     R  |
+		k  <  | R   R   R   R   R   R   R     S   R     R   R   R   R   R   R     R   R   R   R     R  |
+		   <= | R   R   R   R   R   R   R     S   R     R   R   R   R   R   R     R   R   R   R     R  |
+		   >  | R   R   R   R   R   R   R     S   R     R   R   R   R   R   R     R   R   R   R     R  |
+		   >= | R   R   R   R   R   R   R     S   R     R   R   R   R   R   R     R   R   R   R     R  |
+		                                                                                               |
+		   && | R   R   R   R   R   R   R     S   R     S   S   S   S   S   S     R   R   S   R     R  |
+		   || | R   R   R   R   R   R   R     S   R     S   S   S   S   S   S     R   R   S   R     R  |
+		   !  | R   R   R   R   R   R   R     S   R     S   S   S   S   S   S     R   R   S   R     R  |
+		   ^^ | R   R   R   R   R   R   R     S   R     S   S   S   S   S   S     R   R   S   R     R  |
+		      |                                                                                        |
+		   $  | S   S   S   S   S   S   E4    S   E3    S   S   S   S   S   S     S   S   S   S     A  | */
+		   
+		   // comparison operators sit near the bottom of the precdence table, only bitwise operations are lower
+		   // but we're not doing bitwise
+		   // see: http://en.wikipedia.org/wiki/Order_of_operations
 		
-		public Expression(String text) {
+		// C# really needs C-style #defines at times...
+		private static readonly P[,] _precedence = {
+			//  +          -          *          /          ^         M           ,          (          )          ==         !=         <          <=         >          >=         &&         ||         !          ^^        $
+	/*	+	*/{ P.Reduce,  P.Reduce,  P.Shift,   P.Shift,   P.Shift,   P.Shift,   P.Reduce,  P.Shift,   P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Shift,   P.Reduce, P.Reduce  },
+	/*	-	*/{ P.Reduce,  P.Reduce,  P.Shift,   P.Shift,   P.Shift,   P.Shift,   P.Reduce,  P.Shift,   P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Shift,   P.Reduce, P.Reduce  },
+	/*	*	*/{ P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Shift,   P.Shift,   P.Reduce,  P.Shift,   P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Shift,   P.Reduce, P.Reduce  },
+	/*	/	*/{ P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Shift,   P.Shift,   P.Reduce,  P.Shift,   P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Shift,   P.Reduce, P.Reduce  },
+	/*	^	*/{ P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Shift,   P.Shift,   P.Reduce,  P.Shift,   P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Shift,   P.Reduce, P.Reduce  },
+	/*	M	*/{ P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Shift,   P.Reduce,  P.Shift,   P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Shift,   P.Reduce, P.Reduce  },
+	/*	,	*/{ P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Error4,  P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce, P.Error4  },
+	/*	(	*/{ P.Shift,   P.Shift,   P.Shift,   P.Shift,   P.Shift,   P.Shift,   P.Shift,   P.Shift,   P.Shift,   P.Shift,   P.Shift,   P.Shift,   P.Shift,   P.Shift,   P.Shift,   P.Shift,   P.Shift,   P.Shift,   P.Shift,  P.Error1  },
+	/*	)	*/{ P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Error4,  P.Error2,  P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Shift,   P.Reduce, P.Reduce  },
+	
+	/*	==	*/{ P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Shift,   P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Shift,  P.Reduce  },
+	/*	!=	*/{ P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Shift,   P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Shift,  P.Reduce  },
+	/*	<	*/{ P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Shift,   P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Shift,  P.Reduce  },
+	/*	<=	*/{ P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Shift,   P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Shift,  P.Reduce  },
+	/*	>	*/{ P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Shift,   P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Shift,  P.Reduce  },
+	/*	>=	*/{ P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Shift,   P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Shift,  P.Reduce  },
+	
+	/*	&&	*/{ P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Shift,   P.Reduce,  P.Shift,   P.Shift,   P.Shift,   P.Shift,   P.Shift,   P.Shift,   P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce, P.Reduce   },
+	/*	||	*/{ P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Shift,   P.Reduce,  P.Shift,   P.Shift,   P.Shift,   P.Shift,   P.Shift,   P.Shift,   P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce, P.Reduce  },
+	/*	!	*/{ P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Shift,   P.Reduce,  P.Shift,   P.Shift,   P.Shift,   P.Shift,   P.Shift,   P.Shift,   P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce, P.Reduce  },
+	/*	^^	*/{ P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce,  P.Shift,   P.Reduce,  P.Shift,   P.Shift,   P.Shift,   P.Shift,   P.Shift,   P.Shift,   P.Reduce,  P.Reduce,  P.Reduce,  P.Reduce, P.Reduce  },
+	
+	/*	$	*/{ P.Shift,   P.Shift,   P.Shift,   P.Shift,   P.Shift,   P.Shift,   P.Error4,  P.Shift,   P.Error3,  P.Shift,   P.Shift,   P.Shift,   P.Shift,   P.Shift,   P.Shift,   P.Shift,   P.Shift,   P.Shift,   P.Shift,  P.Accept  }
+		};
+		
+		private Object _lock = new Object();
+		
+		private Stack<BigNum>   _valueStack    = new Stack<BigNum>();
+		private Stack<Operator> _operatorStack = new Stack<Operator>();
+		
+		private readonly String _expression;
+		private Dictionary<String,BigNum> _symbols;
+		
+		private Operator _token; // current token
+		private BigNum   _value; // current value
+		private Operator _ptoken; // previous token
+		
+		private Boolean  _isFirstToken;
+		private Int32    _toki;
+		
+		public Expression(String expression) {
 			
-			if( text == null) throw new ArgumentNullException("text");
-			if( text.Length == 0) throw new ArgumentException("text must be at least 1 character long.");
+			_expression = expression;
+		}
+		
+		public BigNum Evaluate(Dictionary<String,BigNum> symbols) {
 			
-			text = text.Replace(" ", "").ToLower(Cult.InvariantCulture);
+			lock( _lock ) {
 			
-			/////////////////////////////////
-			// Look for unary functions (their only argument is whatever's on the stack already)
-			/////////////////////////////////
-			if(text.Length == 3) {
-				switch(text) {
-					case "sin": _function = MathFunction.Sin; return;
-					case "cos": _function = MathFunction.Cos; return;
-					case "tan": _function = MathFunction.Tan; return;
-					case "csc": _function = MathFunction.Csc; return;
-					case "sec": _function = MathFunction.Sec; return;
-					case "cot": _function = MathFunction.Cot; return;
-				}
-			} else if(text.Length == 1) {
-				if(text == "!") {
-					_function = MathFunction.Fac; return;
+			////////////////////////////
+			// Reinit
+			
+			_valueStack.Clear();
+			_operatorStack.Clear();
+			_operatorStack.Push(Operator.Eof );
+			
+			_token  = Operator.Eof;
+			_ptoken = Operator.Eof;
+			_value  = 0;
+			_isFirstToken = true;
+			_toki         = 0;
+			
+			if( symbols == null ) symbols = new Dictionary<String,BigNum>();
+			
+			_symbols = symbols;			
+			
+			Advance();
+			
+			while(true) {
+				
+				if( StackChanged != null ) StackChanged(this, EventArgs.Empty);
+				
+				if( _token == Operator.Val ) {
+					// if the current token is a value
+					// shift it to value stack
+					
+					Shift();
+					
 				} else {
-					throw new FormatException("text could not be parsed as an expression.");
-				}
-			}
-			
-			/////////////////////////////////
-			// Look for binary functions (second argument provided in the text)
-			/////////////////////////////////
-			Char c = text[0];
-			switch(c) {
-				case '+': _function = MathFunction.Add; break;
-				case '-': _function = MathFunction.Sub; break;
-				case '*': _function = MathFunction.Mul; break;
-				case '/': _function = MathFunction.Div; break;
-				case '%': _function = MathFunction.Mod; break;
-				case '^': _function = MathFunction.Pow; break;
-				default:
-					throw new FormatException("text could not be parsed as an expression.");
-			}
-			
-			// then the number part
-			String number = text.Substring(1);
-			if(!Double.TryParse(number, out _value)) {
-				throw new FormatException("text could not be parsed as an expression.");
-			}
-			
-		}
-		
-		public MathFunction Function {
-			get { return _function; }
-		}
-		
-		public Double Value {
-			get { return _value; }
-		}
-		
-		public override string ToString() {
-			
-			switch(_function) {
-				case MathFunction.Add: return "+" + _value.ToString(Cult.InvariantCulture);
-				case MathFunction.Sub: return "-" + _value.ToString(Cult.InvariantCulture);
-				case MathFunction.Mul: return "*" + _value.ToString(Cult.InvariantCulture);
-				case MathFunction.Div: return "/" + _value.ToString(Cult.InvariantCulture);
-				case MathFunction.Mod: return "%" + _value.ToString(Cult.InvariantCulture);
-				case MathFunction.Pow: return "^" + _value.ToString(Cult.InvariantCulture);
-				case MathFunction.Fac: return "!";
-				default:
-					if(_value != Double.NegativeInfinity) {
-						return _function.ToString() + "(" + _value.ToString(Cult.InvariantCulture) + ")";
-					} else {
-						return _function.ToString();
+					
+					// get precedence for the last operator and the current operator
+					Operator lastOp = _operatorStack.Peek();
+					Precedence p = _precedence[ (int)lastOp, (int)_token ];
+					switch(p) {
+						case Precedence.Reduce:
+							
+							Reduce();
+							
+							break;
+						case Precedence.Shift:
+							
+							Shift();
+							
+							break;
+						case Precedence.Accept:
+							
+							EnsureVal(1);
+							
+							return _value = _valueStack.Pop();
+							
+						default:
+							throw new ExpressionException( p.ToString() + " at position " + _toki );
 					}
+					
+				}
+				
+				
+			}//while
+		
+			}//lock
+		}
+		
+#region Step Inside...
+		
+		public event EventHandler StackChanged;
+		
+		public BigNum[] CurrentValueStack {
+			get {
+				return _valueStack.ToArray();
+			}
+		}
+		
+		public Operator[] CurrentOperatorStack {
+			get {
+				return _operatorStack.ToArray();
+			}
+		}
+		
+		public BigNum CurrentValue {
+			get {
+				return _value;
+			}
+		}
+		
+		public String ExpressionString {
+			get { return _expression; }
+		}
+		
+		public String[] Tokenize() {
+			
+			lock(_lock) {
+				
+				List<String> tokens = new List<String>();
+				
+				_toki = 0;
+				
+				String t = Strtok();
+				while(t != null) {
+					
+					tokens.Add( t );
+					
+					t = Strtok();
+				}
+				
+				return tokens.ToArray();
+			}
+		}
+		
+#endregion
+		
+		private void Advance() {
+			
+			if( _isFirstToken ) {
+				
+				_isFirstToken = false;
+				_ptoken = Operator.Eof;
+				
 			}
 			
+			String s = Strtok();
+			if( s == null ) {
+				
+				_token = Operator.Eof;
+				
+			} else {
+				
+				switch(s) {
+// Arithmetic
+					case "+" : _token = Operator.Add; break;
+					case "-" : _token = Operator.Sub; break;
+					case "*" : _token = Operator.Mul; break;
+					case "/" : _token = Operator.Div; break;
+					case "^" : _token = Operator.Pow; break;
+// Punctuation
+					case "," : _token = Operator.Cmm; break;
+					case "(" : _token = Operator.PaL; break;
+					case ")" : _token = Operator.PaR; break;
+					
+// Comparison
+					case "==": _token = Operator.CoE; break;
+					case "!=": _token = Operator.CoN; break;
+					case "<" : _token = Operator.CoL; break;
+					case "<=": _token = Operator.CLE; break;
+					case ">" : _token = Operator.CoG; break;
+					case ">=": _token = Operator.CGE; break;
+// Logic
+					case "&&": _token = Operator.And; break;
+					case "||": _token = Operator.Or;  break;
+					case "^^": _token = Operator.Xor; break;
+					case "!" : _token = Operator.Not; break;
+					default:
+						// either a number, a name, or a function
+						// if it's a name, resolve it
+						
+						// TODO: Make BigNum respect Culture's number format settings
+						if( BigNum.TryParse( s, out _value ) ) {
+							
+							_token = Operator.Val;
+							
+						} else {
+							
+//							if( IsFunction(s) ) {
+//								
+//								_token = Operator.Fun;
+//								
+//							} else
+							if( _symbols.TryGetValue( s, out _value ) ) {
+								
+								_token = Operator.Val;
+								
+							} else {
+								
+								throw new ExpressionException("Undefined symbol: \"" + s + "\" at position " + _toki );
+							}
+							
+						}
+						
+						break;
+				}
+				
+			}
+			
+			// check for unary minus
+			if( _token == Operator.Sub ) {
+				
+				if( _ptoken != Operator.Val && _ptoken != Operator.PaR ) {
+					
+					_token = Operator.Neg;
+				}
+				
+			}
+			
+			_ptoken = _token;
+			
+		}
+		
+		private static Boolean IsFunction(String functionName) {
+			
+			switch(functionName) {
+				case "sin":
+				case "cos":
+				case "tan":
+//				case "sinh":
+//				case "cosh":
+//				case "tanh":
+				case "cosec":
+				case "secant":
+				case "cotangent":
+					return true;
+			}
+			return false;
+		}
+		
+		private String Strtok() {
+			
+			if( _toki >= _expression.Length ) return null;
+			
+			String ret = _expression.Tok(ref _toki);
+			
+			// special case for != (which is not a contiguous category) OtherPunctuation+MathSymbol
+			
+			if( ret == "!" ) {
+				
+				Int32 origIdx = _toki;
+				String next = _expression.Tok(ref _toki);
+				if( next == "=" )
+					ret = "!=";
+				else
+					_toki = origIdx;
+			
+			}
+			
+			return ret;
+			
+		}
+		
+		private void Shift() {
+			
+			if( _token == Operator.Val ) {
+				
+				_valueStack.Push( _value );
+				
+			} else {
+				
+				_operatorStack.Push( _token );
+				
+			}
+			
+			Advance();
+		}
+		
+		private void Reduce() {
+			
+			Operator op = _operatorStack.Peek();
+			switch(op) {
+				
+				case Operator.Add:
+					
+					// Apply E := E + E
+					EnsureVal(2);
+					BigNum aa = _valueStack.Pop();
+					BigNum ab = _valueStack.Pop();
+					_valueStack.Push( aa + ab );
+					
+					break;
+				
+				case Operator.Sub:
+					
+					// Apply E := E - E
+					EnsureVal(2);
+					BigNum sa = _valueStack.Pop();
+					BigNum sb = _valueStack.Pop();
+					_valueStack.Push( sb - sa );
+					
+					break;
+				
+				case Operator.Mul:
+					
+					EnsureVal(2);
+					BigNum ma = _valueStack.Pop();
+					BigNum mb = _valueStack.Pop();
+					_valueStack.Push( ma * mb );
+					
+					break;
+				
+				case Operator.Div:
+					
+					EnsureVal(2);
+					BigNum da = _valueStack.Pop();
+					BigNum db = _valueStack.Pop();
+					_valueStack.Push( db / da );
+					
+					break;
+				
+				case Operator.Neg:
+					
+					EnsureVal(1);
+					BigNum na = _valueStack.Pop();
+					_valueStack.Push( -na );
+					
+					break;
+				
+				case Operator.Pow:
+					
+					EnsureVal(2);
+					BigNum pa = _valueStack.Pop();
+					BigNum pb = _valueStack.Pop();
+					
+					Int32 exponent = Int32.Parse( pa.ToString() );
+					_valueStack.Push( pb.Power( exponent ) );
+					
+					break;
+					
+				case Operator.PaR:
+					
+					_operatorStack.Pop();
+					break;
+				
+				case Operator.CoE:
+				case Operator.CoN:
+				case Operator.CoL:
+				case Operator.CLE:
+				case Operator.CoG:
+				case Operator.CGE:
+					
+					EnsureVal(2);
+					BigNum ea = _valueStack.Pop();
+					BigNum eb = _valueStack.Pop();
+					
+					Boolean eq = ea == eb;
+					Boolean lt = eb <  ea;
+					Boolean gt = eb >  ea;
+					
+					Boolean result = eq;
+					
+					if     ( op == Operator.CoE ) _valueStack.Push( eq       ? 1 : 0 );
+					else if( op == Operator.CoN ) _valueStack.Push( eq       ? 0 : 1 );
+					else if( op == Operator.CoL ) _valueStack.Push( lt       ? 1 : 0 );
+					else if( op == Operator.CLE ) _valueStack.Push( lt || eq ? 1 : 0 );
+					else if( op == Operator.CoG ) _valueStack.Push( gt       ? 1 : 0 );
+					else if( op == Operator.CGE ) _valueStack.Push( gt || eq ? 1 : 0 );
+					
+					break;
+					
+				case Operator.And:
+				case Operator.Or:
+				case Operator.Xor:
+					
+					EnsureVal(2);
+					BigNum binA = _valueStack.Pop();
+					BigNum binB = _valueStack.Pop();
+					
+					switch(op) {
+						case Operator.And:
+							
+							Boolean and = binA == 1 && binB == 1;
+							_valueStack.Push( and ? 1 : 0 );
+							break;
+							
+						case Operator.Or:
+							
+							Boolean or  = binA == 1 || binB == 1;
+							_valueStack.Push( or  ? 1 : 0 );
+							break;
+							
+						case Operator.Xor:
+							
+							Boolean xor = (binA == 1 && binB != 1) || (binA != 1 && binB == 1);
+							_valueStack.Push( xor ? 1 : 0 );
+							break;
+							
+					}
+					
+					break;
+					
+				case Operator.Not:
+					
+					EnsureVal(1);
+					BigNum notA = _valueStack.Pop();
+					if(notA == 1) notA = 0;
+					else          notA = 1;
+					
+					_valueStack.Push( notA );
+					
+					break;
+				
+//				Else, ignore it. Do not throw an exception
+				
+			}
+			
+			_operatorStack.Pop();
+		}
+		
+		private void EnsureVal(Int32 depth) {
+			
+			if( _valueStack.Count < depth ) throw new ExpressionException("Syntax error (EnsureVal) at position " + _toki );
+			
+		}
+		
+		public static readonly Dictionary<Operator,String> OperatorSymbols = new Dictionary<Operator,String>() {
+			{ Operator.Add, "+" },
+			{ Operator.Sub, "-" },
+			{ Operator.Mul, "*" },
+			{ Operator.Div, "/" },
+			{ Operator.Neg, "--" },
+			
+			{ Operator.Cmm, "," },
+			{ Operator.PaL, "(" },
+			{ Operator.PaR, ")" },
+			
+			{ Operator.CoE, "==" },
+			{ Operator.CoN, "!=" },
+			{ Operator.CoL, "<" },
+			{ Operator.CLE, "<=" },
+			{ Operator.CoG, ">" },
+			{ Operator.CGE, ">=" },
+			
+			{ Operator.And, "&&" },
+			{ Operator.Or,  "||" },
+			{ Operator.Not, "!" },
+			{ Operator.Xor, "^^" },
+			
+			{ Operator.Eof, "$" },
+			{ Operator.Max, "Max" },
+			{ Operator.Val, "Val" },
+		};
+		
+		public override String ToString() {
+			
+			return ExpressionString;
 		}
 		
 	}
 	
-	public enum MathFunction {
-		None,
-		Add,
-		Sub,
+	public enum Operator { // numbering is importance because it's used as a lookup in the precedence table
+// Arithmetic	
+		Add = 0,
+		Sub = 1,
 		Mul,
 		Div,
-		Mod,
-		/// <summary>Factorial</summary>
-		Fac,
-		/// <summary>Power</summary>
 		Pow,
-		/// <summary>Sine</summary>
-		Sin,
-		/// <summary>Cosine</summary>
-		Cos,
-		/// <summary>Tan</summary>
-		Tan,
-		/// <summary>Cosec</summary>
-		Csc,
-		/// <summary>Secant</summary>
-		Sec,
-		/// <summary>Cotangent</summary>
-		Cot
+		Neg, // unary negation
+// Punctuation
+		Cmm, // comma
+		PaL, // left parens
+		PaR, // right parens
+// Comparison
+		CoE, // Comparison: Equals
+		CoN, // Comparison: Not Equals
+		CoL, // Comparison: Less Than
+		CLE, // Comparison: Less Than or Equal To
+		CoG, // Comparison: Greater Than
+		CGE, // Comparison: Greater Than or Equal To
+// Logic
+		And,
+		Or,
+		Not,
+		Xor,
+// Special
+		Eof, // end of
+		Max, // maximum number of operators
+		Val, // value
+		Fun, // function call
+	}
+	
+	internal enum Precedence {
+		Shift  = 0,
+		Reduce = 1,
+		Accept = 2,
+		/// <summary>Missing right parenthesis</summary>
+		Error1 = 6,
+		/// <summary>Missing operator</summary>
+		Error2 = 7,
+		/// <summary>Unbalanced right parenthesis</summary>
+		Error3 = 8,
+		/// <summary>Invalid function argument</summary>
+		Error4 = 9
+	}
+	
+	[Serializable]
+	public class ExpressionException : Exception {
+		
+		public ExpressionException() {
+		}
+		
+		public ExpressionException(string message) : base(message) {
+		}
+		
+		public ExpressionException(string message, Exception inner) : base(message, inner) {
+		}
+		
+		protected ExpressionException( S.SerializationInfo info, S.StreamingContext context) : base(info, context) {
+		}
+		
 	}
 	
 }

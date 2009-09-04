@@ -99,7 +99,7 @@ namespace W3b.Sine {
 			String  bi = ai.ToString();
 			String  bn = ab.ToString();
 			
-			Console.WriteLine( "{0,18} : {1,18} -> {3,18}", ai, bn,  bi == bn ? "Pass" : "Fail" );
+			Console.WriteLine( "{0,18} : {1,18} -> {2}", ai, bn,  bi == bn ? "Pass" : "Fail" );
 			
 		}
 		

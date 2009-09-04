@@ -1,32 +1,3 @@
-/*
-*  BSD 3-clause license:
-* 
-* Copyright (c) 2008, David Rees / David "W3bbo" Rees / http://www.softicide.com / http://www.w3bdevil.com
-* All rights reserved.
-*
-* Redistribution and use in source and binary forms, with or without
-* modification, are permitted provided that the following conditions are met:
-*     * Redistributions of source code must retain the above copyright
-*       notice, this list of conditions and the following disclaimer.
-*     * Redistributions in binary form must reproduce the above copyright
-*       notice, this list of conditions and the following disclaimer in the
-*       documentation and/or other materials provided with the distribution.
-*     * Neither the name of the David Rees nor the
-*       names of its contributors may be used to endorse or promote products
-*       derived from this software without specific prior written permission.
-*
-* THIS SOFTWARE IS PROVIDED BY David Rees ``AS IS'' AND ANY
-* EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-* WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-* DISCLAIMED. IN NO EVENT SHALL David Rees BE LIABLE FOR ANY
-* DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-* (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-* LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-* ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-* (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-* SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
-
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -58,7 +29,7 @@ namespace W3b.Sine {
 		
 #endregion
 		
-		private readonly static Char[] _digits = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' };
+		private readonly static Char[] _digits = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F' };
 		
 		/// <summary>Creates a new BigNumDec with an empty data list. Not identical to zero.</summary>
 		public BigNumDec() {
@@ -165,8 +136,17 @@ namespace W3b.Sine {
 		}
 		
 		public override Boolean Equals(Object obj) {
-			BigNumDec bn = obj as BigNumDec;
-			return bn == null ? false : Equals( bn );
+			
+			if( obj is BigNum ) {
+				BigNumDec bn = obj as BigNumDec;
+				return bn == null ? false : Equals( bn );
+			}
+			
+			String s = obj.ToString();
+			BigNumDec b = new BigNumDec( s );
+			
+			return Equals( b );
+			
 		}
 		public Boolean Equals(BigNumDec other) {
 			
@@ -197,7 +177,7 @@ namespace W3b.Sine {
 				if(!Sign) sb.Append( '-' );
 			}
 			
-			//Int32 nofDigits = 0;
+			Int32 nofDigits = 0;
 			for(int i=Length-1;i>=0;i--) {
 				
 				if( i + _exp + 1 == 0 ) { // if reached radix point
@@ -205,8 +185,8 @@ namespace W3b.Sine {
 				}
 				sb.Append( _digits[ _data[i] ] );
 				
-				//nofDigits++;
-				//if(nofDigits > _toStringLimit) break;
+				nofDigits++;
+				if(nofDigits > _toStringLimit) break;
 			}
 			
 			if(Length == 0) sb.Append("0");
@@ -719,7 +699,7 @@ namespace W3b.Sine {
 		
 		private BigNumDec GetFractionalPart() {
 			
-			if(_exp == 0) return (BigNumDec)0;
+			if(_exp == 0) return (BigNumDec)BigNumDec.CreateInstance(0);
 			
 			Normalise();
 			
