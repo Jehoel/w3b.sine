@@ -94,7 +94,7 @@ namespace W3b.Sine {
 		private static void TestStore(Double value) {
 			
 			Double   ai = value;
-			BigNum   ab = BigNum.CreateInstance( ai );
+			BigNum   ab = ai; // implicit conversion
 			
 			String  bi = ai.ToString();
 			String  bn = ab.ToString();
@@ -106,7 +106,7 @@ namespace W3b.Sine {
 		private static void TestAdd(Double a, Double b) {
 			
 			String di = (a+b).ToString();
-			String ni  = ( BigNum.CreateInstance(a) + BigNum.CreateInstance(b) ).ToString();
+			String ni  = ( BigNum.Create(a) + BigNum.Create(b) ).ToString();
 			
 			Console.WriteLine("{0,18} + {1,18} = {2,18} : {3,18} -> {4}", a, b, di, ni, di == ni ? "Pass" : "Fail" );
 			
@@ -116,8 +116,8 @@ namespace W3b.Sine {
 			
 			String di = a.CompareTo(b).ToString() + ' ' + b.CompareTo(a).ToString();
 			
-			BigNum na = BigNum.CreateInstance(a);
-			BigNum nb = BigNum.CreateInstance(b);
+			BigNum na = a;
+			BigNum nb = b;
 			
 			String ni = na.CompareTo(nb).ToString() + ' ' + nb.CompareTo(na).ToString();
 			
@@ -129,7 +129,7 @@ namespace W3b.Sine {
 		private static void TestMul(Double a, Double b) {
 			
 			String di = (a*b).ToString();
-			String ni = ( BigNum.CreateInstance(a) * BigNum.CreateInstance(b) ).ToString();
+			String ni = ( BigNum.Create(a) * BigNum.Create(b) ).ToString();
 			
 			Console.WriteLine("{0,6} * {1,6} = {2,6} : {3,6} -> {4,6}", a, b, di, ni, di == ni ? "Pass" : "Fail" );
 		}
@@ -137,7 +137,7 @@ namespace W3b.Sine {
 		private static void TestDiv(Double a, Double b) {
 			
 			String di = (a/b).ToString();
-			String ni  = ( BigNum.CreateInstance(a) / BigNum.CreateInstance(b) ).ToString();
+			String ni  = ( BigNum.Create(a) / BigNum.Create(b) ).ToString();
 			
 			Console.WriteLine("{0,6} / {1,6} = {2,6} : {3,6} -> {4,6}", a, b, di, ni, di == ni ? "Pass" : "Fail" );
 		}
@@ -147,7 +147,7 @@ namespace W3b.Sine {
 			Int32 power = (Int32)System.Math.Round(100 * b);
 			
 			String di = System.Math.Pow(a, power).ToString();
-			String ni = BigNum.CreateInstance(a).Power( power ).ToString();
+			String ni = BigMath.Pow( a, power ).ToString();
 			
 			Console.WriteLine("{0,6} ^ {1,6} = {2,6} : {3,6} -> {4,6}", a, power, di, ni, di == ni ? "Pass" : "Fail" );
 		}
@@ -155,74 +155,9 @@ namespace W3b.Sine {
 		private static void TestSin(Double a) {
 			
 			String di = System.Math.Sin(a).ToString();
-			String ni = BigNum.CreateInstance(a).Sine().ToString();
+			String ni = BigMath.Sin( BigNum.Create(a) ).ToString();
 			
 			Console.WriteLine("Sin({0,6}) = {1,6} : {2,6} -> {3,6}", a, di, ni, di == ni ? "Pass" : "Fail" );
-		}
-		
-		public static void ModTest() {
-			
-			Decimal a = 123456789M;
-			Decimal b = 3.1415926535897932385M;
-			
-			Decimal result  = SimpleMod(a, b);
-			
-			Decimal result2 = XkcdModTest(a, b);
-			
-		}
-		
-		private static Decimal XkcdModTest(Decimal a, Decimal b) {
-			
-			// I can't get this to work
-			return 0;
-			
-			// swap them around so a is the smallest
-			if(a > b) {
-				Decimal temp = a;
-				a = b;
-				b = temp;
-			}
-			
-			Decimal error = 0;
-			Decimal var   = 0;
-			
-			while(a < b) {
-				
-				Int32 n = 0;
-				while(var < b) {
-					
-					var = (Decimal)Math.Power(2, n) * b;
-					n++;
-					
-				}
-				n--;
-				
-				Decimal integerPart = System.Math.Floor( (Decimal)Math.Power(2, n) * b );
-				a = a - integerPart;
-				
-				error += a;
-				
-			}
-			
-			Decimal result = a - error;
-			if(result < 0) throw new NotImplementedException();
-			
-			return result;
-			
-			
-		}
-		
-		private static Decimal SimpleMod(Decimal a, Decimal b) {
-			
-			// (a % b = a - b * floor(a/b))
-			
-			Decimal retVal = a / b;
-			retVal = System.Math.Floor( retVal );
-			retVal = b * retVal;
-			retVal = a - retVal;
-			
-			return retVal; 
-			
 		}
 		
 	}

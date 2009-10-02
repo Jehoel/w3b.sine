@@ -48,6 +48,8 @@ namespace W3b.Sine {
 			
 			} else {
 				
+				PrintBanner();
+				
 				while(PromptUser()) {
 				}
 				
@@ -56,24 +58,55 @@ namespace W3b.Sine {
 			return 0;
 		}
 		
+		private static void PrintBanner() {
+			
+			Console.WriteLine("W3b.Sine Sample Program. http://sine.codeplex.com");
+			Console.WriteLine("Copyright 2008-2009 David Rees. New BSD License.");
+			Console.WriteLine("Type 'help' for help, 'test' to run tests, 'q' to quit.");
+		}
+		
 		private static void PrintHelp() {
 			
-			Console.WriteLine("Commands:");
-			Console.WriteLine("\tq - Quit");
-			Console.WriteLine("\tadd symbolName = <expr>");
-			Console.WriteLine("\t\tAdd an expression's value to the dictionary (expressions are not reevaluated, use functions instead)");
-			Console.WriteLine("\trem symbolName");
-			Console.WriteLine("\t\tRemove a symbol to the dictionary");
-			Console.WriteLine();
-			Console.WriteLine("\tAny other input is interpreted as an expression. For this reason don't use 'add' or 'rem' as symbol names");
-			Console.WriteLine();
-			Console.WriteLine("Command-line options:");
-			Console.WriteLine("\tSample.exe /help");
-			Console.WriteLine("\t\tPrints this message");
-			Console.WriteLine("\tSample.exe /test");
-			Console.WriteLine("\t\tRuns BigNum tests");
-			Console.WriteLine("\tSample.exe <expr>");
-			Console.WriteLine("\t\tEvaluates <expr> and quits");
+			String help = 
+@"Commands:
+	
+	q
+		Quits the program
+	add <symbolName> = <expr>
+		Add an expression's value to the dictionary (expressions are not reevaluated, use functions instead)
+	rem <symbolName>
+		Remove a symbol to the dictionary
+	help
+		Displays this message
+	test
+		Runs tests
+		
+	Any other input is interpreted as a function call or evaluated as an expression.
+	For this reason, don't use command names as symbols
+	
+Command-line options:
+	
+	Sample.exe /help
+		Prints this message
+	Sample.exe /test
+		Runs BigNum tests
+	Samplele.exe <expr>
+		Evaluates <expr> and quits
+
+Implemented Functions:
+	Trigonometric:
+		sin, cos, tan
+		(Sine, Cosine, Tangent)
+	Reciprocal Trig:
+		sec, csc, cot
+		(Secant, Cosec, Cotangent)
+	Number:
+		abs, floor, ceil, fact
+		(Absolute, Floor, Ceiling, Factorial)
+		
+	Functions must be on their own line and cannot be a part of an expression";
+			
+			Console.WriteLine(help);
 			
 		}
 		
@@ -82,7 +115,8 @@ namespace W3b.Sine {
 		
 		private static Boolean PromptUser() {
 			
-			Console.WriteLine("Enter expression " + (_count++).ToString() + ", or 'q' to quit" );
+			Console.Write( (++_count).ToString() );
+			Console.Write(">");
 			
 			String s = Console.ReadLine();
 			if( s == "q" ) return false;
@@ -96,7 +130,10 @@ namespace W3b.Sine {
 					
 					Expression xp = new Expression( expr );
 					BigNum ret = xp.Evaluate( _symbols );
-					_symbols.Add( name, ret );
+					
+					if( _symbols.ContainsKey( name ) ) _symbols[name] = ret;
+					else                               _symbols.Add( name, ret );
+					
 					Console.WriteLine("Added: " + name + " = " + ret.ToString() );
 					
 				} catch(Exception ex) {
@@ -112,13 +149,27 @@ namespace W3b.Sine {
 				
 				Console.WriteLine("Removed: " + name);
 				
-			} else if( String.Equals(s, "Help", StringComparison.OrdinalIgnoreCase) ) {
+			} else if( String.Equals(s, "help", StringComparison.OrdinalIgnoreCase) ) {
 				
 				PrintHelp();
 				
+			} else if( String.Equals(s, "test", StringComparison.OrdinalIgnoreCase) ) {
+				
+				BigNumTests.Test();
+				
 			} else {
 				
-				EvaluateExpression( s );
+				Int32 startIndex;
+				Function func = IsFunction( s, out startIndex );
+				if( func != Function.None ) {
+					
+					EvaluateFunction( func, s.Substring( startIndex ) );
+					
+				} else {
+					
+					EvaluateExpression( s );
+					
+				}
 			}
 			
 			return true;
@@ -137,6 +188,48 @@ namespace W3b.Sine {
 			} catch(Exception ex) {
 				
 				PrintException(ex);
+			}
+			
+		}
+		
+		private static void EvaluateFunction(Function function, String expression) {
+			
+			try {
+				
+				Expression expr = new Expression( expression );
+				BigNum num = expr.Evaluate( _symbols );
+				
+				BigNum result = EvaluateFunction(function, num);
+				
+				Console.WriteLine("Result: " + result.ToString() );
+				
+			} catch(Exception ex) {
+				
+				PrintException(ex);
+			}
+			
+		}
+		
+		private static BigNum EvaluateFunction(Function function, BigNum num) {
+			
+			switch(function) {
+				
+				case Function.Sin: return BigMath.Sin( num );
+				case Function.Cos: return BigMath.Cos( num );
+				case Function.Tan: return BigMath.Tan( num );
+				
+				case Function.Csc: return BigMath.Csc( num );
+				case Function.Sec: return BigMath.Sec( num );
+				case Function.Cot: return BigMath.Cot( num );
+				
+				case Function.Abs:   return BigMath.Abs( num );
+				case Function.Ceil:  return BigMath.Ceiling( num );
+				case Function.Floor: return BigMath.Floor( num );
+				case Function.Fact:  return BigMath.Factorial( num );
+				
+				default:
+					throw new ExpressionException("Unknown or invalid function");				
+				
 			}
 			
 		}
@@ -167,6 +260,49 @@ namespace W3b.Sine {
 			
 			Console.ResetColor();
 			
+		}
+		
+		private static Function IsFunction(String input, out Int32 spaceIdx) {
+			
+			spaceIdx = input.IndexOf(" ");
+			if( spaceIdx <= 2 ) return Function.None;
+			
+			String funcName = input.Substring(0, spaceIdx );
+			
+			switch(funcName) {
+				case "sin": return Function.Sin;
+				case "cos": return Function.Cos;
+				case "tan": return Function.Tan;
+				
+				case "csc": return Function.Csc;
+				case "sec": return Function.Sec;
+				case "cot": return Function.Cot;
+				
+				case "abs"  : return Function.Abs;
+				case "floor": return Function.Floor;
+				case "ceil" : return Function.Ceil;
+				case "fact" : return Function.Fact;
+				
+				default : return Function.None;
+			}
+			
+		}
+		
+		private enum Function {
+			None,
+			
+			Sin,
+			Cos,
+			Tan,
+			
+			Csc,
+			Sec,
+			Cot,
+			
+			Abs,
+			Floor,
+			Ceil,
+			Fact
 		}
 		
 	}

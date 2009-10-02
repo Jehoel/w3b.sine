@@ -15,17 +15,15 @@ namespace W3b.Sine {
 		/// <remarks>Auto-initialised to 0.</remarks>
 		private Int32       _exp;
 		
-		private const String _implName = "DecimalArray";
-		
 #region Options
 		
 		/// <summary>Whether to print + in ToString if the value is positive.</summary>
 		/// <remarks>Auto-initialised to 0.</remarks>
 		private static Boolean _printPositiveSign;
 		/// <summary>Number of digits to get when dividing.</summary>
-		private static Int32   _divisionDigits    = 100;
-		/// <summary>Number of digits to display when calling ToString().</summary>
-		private static Int32   _toStringLimit     = 20;
+		private static Int32   _divisionDigits     = 100;
+//		/// <summary>Number of radix digits to display when calling ToString().</summary>
+//		private static Int32   _toStringRadixLimit = 20;
 		
 #endregion
 		
@@ -49,159 +47,7 @@ namespace W3b.Sine {
 			Load(value);
 		}
 		
-		public static Boolean PrintPositiveSign {
-			get { return _printPositiveSign; }
-			set { _printPositiveSign = value; }
-		}
-		
-#region Overriden Methods
-		
-		public override BigNum Add(BigNum other) {
-			return BigNumDec.Add( this, (BigNumDec)other );
-		}
-			
-		public override BigNum Multiply(BigNum multiplicand) {
-			return BigNumDec.Multiply(this, (BigNumDec)multiplicand);
-		}
-		
-		public override BigNum Divide(BigNum divisor) {
-			return BigNumDec.Divide(this, (BigNumDec)divisor);
-		}
-		
-		public override BigNum Modulo(BigNum divisor) {
-			return BigNumDec.Modulo(this, (BigNumDec)divisor);
-		}
-		
-		public override Int32 CompareTo(BigNum other) {
-			
-			BigNumDec o = other as BigNumDec;
-			
-			if(o == null) return 1;
-			
-			if( Equals(o) ) return 0;
-			
-			if(Sign && !o.Sign) return 1;
-			else if(!Sign && !o.Sign) return -1;
-			
-			AlignExponent(o);
-			o.AlignExponent(this);
-			
-			Int32 expDifference = ( _exp + _data.Count ) - ( o._exp + o._data.Count );
-			if(expDifference > 0) return 1;
-			else if(expDifference < 0) return -1;
-			
-			// by now both will have the same length
-			for(int i=Length-1;i>=0;i--) {
-				if( this[i] > o[i] ) return 1;
-				if( this[i] < o[i] ) return -1;
-			}
-			
-			return 0;
-			
-		}
-		
-		public override BigNum Negate() {
-			BigNum result = Clone();
-			result.Sign = !result.Sign;
-			return result;
-		}
-		
-		public override BigNum Absolute() {
-			BigNum dolly = Clone();
-			dolly.Sign = true;
-			return dolly;
-		}
-		
-		public override BigNum Floor() {
-			return BigNumDec.Subtract( this, GetFractionalPart() );
-		}
-		
-		public override BigNum Ceiling() {
-			// using the identity ceil(x) == -floor(-x)
-			return this.Negate().Floor().Negate();
-		}
-		
-		public override Boolean IsZero {
-			get {
-				return Length == 0;
-			}
-		}
-		
-		public override BigNum Clone() {
-			BigNumDec dolly = new BigNumDec();
-			dolly.Sign = Sign;
-			dolly._exp = _exp;
-			dolly._data.AddRange( _data );
-			return dolly;
-		}
-		
-		public override Boolean Equals(Object obj) {
-			
-			if( obj is BigNum ) {
-				BigNumDec bn = obj as BigNumDec;
-				return bn == null ? false : Equals( bn );
-			}
-			
-			String s = obj.ToString();
-			BigNumDec b = new BigNumDec( s );
-			
-			return Equals( b );
-			
-		}
-		public Boolean Equals(BigNumDec other) {
-			
-			if(Object.ReferenceEquals(this, other)) return true;
-			
-			if(Sign != other.Sign) return false;
-			if(_exp != other._exp) return false;
-			if(Length != other.Length) return false;
-			
-			for(int i=0;i<Length;i++) {
-				if(this[i] != other[i]) return false;
-			}
-			
-			return true;
-			
-		}
-		
-		public override Int32 GetHashCode() {
-			return _data.GetHashCode() ^ _exp.GetHashCode() ^ _sign.GetHashCode();
-		}
-		
-		public override String ToString() {
-			
-			StringBuilder sb = new StringBuilder(_data.Count);
-			if(_printPositiveSign) {
-				sb.Append( Sign ? '+' : '-' );
-			} else {
-				if(!Sign) sb.Append( '-' );
-			}
-			
-			Int32 nofDigits = 0;
-			for(int i=Length-1;i>=0;i--) {
-				
-				if( i + _exp + 1 == 0 ) { // if reached radix point
-					sb.Append('.');
-				}
-				sb.Append( _digits[ _data[i] ] );
-				
-				nofDigits++;
-				if(nofDigits > _toStringLimit) break;
-			}
-			
-			if(Length == 0) sb.Append("0");
-			
-			if( _exp > 0 ) {
-				sb.Append('E');
-				sb.Append( _exp > 0 ? '+' : '-');
-				sb.Append(_exp);
-			}
-			
-			return sb.ToString();
-			
-		}
-		
-		public override void Load(String textRepresentation) {
+		protected void Load(String textRepresentation) {
 			_data.Clear();
 			
 			// assuming the string has already been tokenized, expression parsing happens elsewhere
@@ -257,6 +103,194 @@ namespace W3b.Sine {
 			
 		}
 		
+		protected void Load(Int64 value) {
+			
+			// cheat by getting .NET to convert to string
+			Load( value.ToString(System.Globalization.CultureInfo.InvariantCulture) );
+			
+		}
+		protected void Load(Double value) {
+			
+			// cheat by getting .NET to convert to string
+			Load( value.ToString(System.Globalization.CultureInfo.InvariantCulture) );
+		}
+		
+		public static Boolean PrintPositiveSign {
+			get { return _printPositiveSign; }
+			set { _printPositiveSign = value; }
+		}
+		
+#region Overriden Methods
+		
+		protected override BigNum Add(BigNum other) {
+			return BigNumDec.Add( this, (BigNumDec)other );
+		}
+			
+		protected override BigNum Multiply(BigNum multiplicand) {
+			return BigNumDec.Multiply(this, (BigNumDec)multiplicand);
+		}
+		
+		protected override BigNum Divide(BigNum divisor) {
+			return BigNumDec.Divide(this, (BigNumDec)divisor);
+		}
+		
+		protected override BigNum Modulo(BigNum divisor) {
+			return BigNumDec.Modulo(this, (BigNumDec)divisor);
+		}
+		
+		public override Int32 CompareTo(Object obj) {
+			
+			if(obj == null) return 1;
+			
+			try {
+				
+				BigNumDec dec = new BigNumDec( obj.ToString() );
+				
+				return CompareTo( dec );
+				
+			} catch(Exception) {
+				return 1;
+			}
+			
+		}
+		
+		public override Int32 CompareTo(BigNum other) {
+			
+			BigNumDec o = other as BigNumDec;
+			
+			if(o == null) return 1;
+			
+			if( Equals(o) ) return 0;
+			
+			if(Sign && !o.Sign) return 1;
+			else if(!Sign && !o.Sign) return -1;
+			
+			AlignExponent(o);
+			o.AlignExponent(this);
+			
+			Int32 expDifference = ( _exp + _data.Count ) - ( o._exp + o._data.Count );
+			if(expDifference > 0) return 1;
+			else if(expDifference < 0) return -1;
+			
+			// by now both will have the same length
+			for(int i=Length-1;i>=0;i--) {
+				if( this[i] > o[i] ) return 1;
+				if( this[i] < o[i] ) return -1;
+			}
+			
+			return 0;
+			
+		}
+		
+		protected override BigNum Negate() {
+			BigNum result = Clone();
+			result.Sign = !result.Sign;
+			return result;
+		}
+		
+		protected internal override BigNum Absolute() {
+			BigNum dolly = Clone();
+			dolly.Sign = true;
+			return dolly;
+		}
+		
+		protected internal override BigNum Floor() {
+			return BigNumDec.Subtract( this, GetFractionalPart() );
+		}
+		
+		protected internal override BigNum Ceiling() {
+			// using the identity ceil(x) == -floor(-x)
+			BigNumDec floored = (BigNumDec)Negate().Floor();
+			return floored.Negate();
+		}
+		
+		public override Boolean IsZero {
+			get {
+				return Length == 0;
+			}
+		}
+		
+		public override BigNum Clone() {
+			BigNumDec dolly = new BigNumDec();
+			dolly.Sign = Sign;
+			dolly._exp = _exp;
+			dolly._data.AddRange( _data );
+			return dolly;
+		}
+		
+		public override Boolean Equals(Object obj) {
+			// remember, this is value equality and two BigNums (even if they're of different subclass) can have an equal value
+			if( obj == null ) return false;
+			
+			if( obj is BigNum ) {
+				BigNumDec bn = obj as BigNumDec;
+				return bn == null ? false : Equals( bn );
+			}
+			
+			String s = obj.ToString();
+			BigNumDec b = new BigNumDec( s );
+			
+			return Equals( b );
+			
+		}
+		public Boolean Equals(BigNumDec other) {
+			
+			if( other == null ) return false;
+			if(Object.ReferenceEquals(this, other)) return true;
+			
+			if(Sign != other.Sign) return false;
+			if(_exp != other._exp) return false;
+			if(Length != other.Length) return false;
+			
+			for(int i=0;i<Length;i++) {
+				if(this[i] != other[i]) return false;
+			}
+			
+			return true;
+			
+		}
+		public override bool Equals(BigNum other) {
+			return Equals( other as BigNumDec );
+		}
+		
+		public override Int32 GetHashCode() {
+			return _data.GetHashCode() ^ _exp.GetHashCode() ^ _sign.GetHashCode();
+		}
+		
+		public override String ToString() {
+			
+			StringBuilder sb = new StringBuilder(_data.Count);
+			if(_printPositiveSign) {
+				sb.Append( Sign ? '+' : '-' );
+			} else {
+				if(!Sign) sb.Append( '-' );
+			}
+
+// commented out the ToString limit because it interferes with some calculations (such as operations that (mistakenly) use the string representation			
+//			Int32 nofRadixDigits = 0;
+			for(int i=Length-1;i>=0;i--) {
+				
+				if( i + _exp + 1 == 0 ) { // if reached radix point
+					sb.Append('.');
+				}
+				sb.Append( _digits[ _data[i] ] );
+				
+//				nofDigits++;
+//				if(nofDigits > _toStringRadixLimit) break;
+			}
+			
+			if(Length == 0) sb.Append("0");
+			
+			if( _exp > 0 ) {
+				sb.Append('E');
+				sb.Append( _exp > 0 ? '+' : '-');
+				sb.Append(_exp);
+			}
+			
+			return sb.ToString();
+			
+		}
+		
 		private enum StringParserState {
 			Sign,
 			IntegerPart,
@@ -271,24 +305,7 @@ namespace W3b.Sine {
 			return -2;
 		}
 		
-		public override void Load(Int64 value) {
-			
-			// cheat by getting .NET to convert to string
-			Load( value.ToString(System.Globalization.CultureInfo.InvariantCulture) );
-			
-		}
-		public override void Load(Double value) {
-			
-			// cheat by getting .NET to convert to string
-			Load( value.ToString(System.Globalization.CultureInfo.InvariantCulture) );
-			
-		}
-		
-		public override String ImplName {
-			get { return _implName; }
-		}
-		
-		public override bool Sign {
+		public override Boolean Sign {
 			get { return _sign; }
 			set { _sign = value; }
 		}
@@ -495,6 +512,8 @@ namespace W3b.Sine {
 				retval  = (BigNumDec)retval.Add(row);
 			}
 			
+			retval.Normalise();
+			
 			return retval;
 			
 		}
@@ -631,20 +650,27 @@ namespace W3b.Sine {
 			BigNumDec multbyb = (b * floored) as BigNumDec;
 			BigNumDec retval  = (a - multbyb) as BigNumDec;
 			
-			return retval;
+			retval.Normalise();
 			
+			return retval;
 		}
 		
-		
+		protected internal override void Truncate(Int32 significance) {
+			
+			Normalise();
+			
+			if( _data.Count > significance ) {
+				
+				_data.RemoveRange( 0, _data.Count - significance );
+				
+				this._exp = -significance;
+			}
+			
+		}
 		
 #endregion
 		
 #region Utility Methods and Private Properties
-		
-/*		public static implicit operator BigNumDec(BigNum number) {
-			if(number.ImplName != _implName) throw new InvalidCastException("Cannot convert to BigNumDec from any other implementation.");
-			return (BigNumDec)number;
-		} */
 		
 		/// <summary>Nabs the most significant digits of this number. If <paramref name="count" /> is greater than the length of the number it pads zeros.</summary>
 		/// <param name="count">Number of digits to return</param>
@@ -699,7 +725,7 @@ namespace W3b.Sine {
 		
 		private BigNumDec GetFractionalPart() {
 			
-			if(_exp == 0) return (BigNumDec)BigNumDec.CreateInstance(0);
+			if(_exp == 0) return 0;
 			
 			Normalise();
 			

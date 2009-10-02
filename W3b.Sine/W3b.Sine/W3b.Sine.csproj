@@ -49,10 +49,10 @@
     <Compile Include="AssemblyInfo.cs" />
     <Compile Include="BigNum.cs" />
     <Compile Include="BigNumDec.cs" />
-    <Compile Include="BigNumMath.cs" />
+    <Compile Include="BiigMath.cs" />
     <Compile Include="Expression.cs" />
     <Compile Include="Extensions.cs" />
-    <Compile Include="Math.cs" />
+    <None Include="Math.cs" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Properties\" />

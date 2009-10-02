@@ -1,4 +1,6 @@
-﻿using System;
+﻿//#define VisibleInternals
+
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -19,7 +21,7 @@ namespace W3b.Sine {
 		// I think booleans can be supported by having false == 0 and true == non-zero
 	
 	/// <summary>A C# implementation of Tom Niemann's Operator Precedence Parsing system ( http://epaperpress.com/oper/index.html ).</summary>
-	public class Expression {
+	public partial class Expression {
 		
 		// The precedence table; beautiful, isn't it?
 /*
@@ -124,13 +126,13 @@ namespace W3b.Sine {
 			
 			if( symbols == null ) symbols = new Dictionary<String,BigNum>();
 			
-			_symbols = symbols;			
+			_symbols = symbols;
 			
 			Advance();
 			
 			while(true) {
 				
-				if( StackChanged != null ) StackChanged(this, EventArgs.Empty);
+				OnStackChanged();
 				
 				if( _token == Operator.Val ) {
 					// if the current token is a value
@@ -172,7 +174,13 @@ namespace W3b.Sine {
 			}//lock
 		}
 		
-#region Step Inside...
+		partial void OnStackChanged();
+		
+#if VisibleInternals
+		
+		partial void OnStackChanged() {
+			if( StackChanged != null ) StackChanged(this, EventArgs.Empty);
+		}
 		
 		public event EventHandler StackChanged;
 		
@@ -193,6 +201,36 @@ namespace W3b.Sine {
 				return _value;
 			}
 		}
+		
+		private static readonly Dictionary<Operator,String> OperatorSymbols = new Dictionary<Operator,String>() {
+			{ Operator.Add, "+" },
+			{ Operator.Sub, "-" },
+			{ Operator.Mul, "*" },
+			{ Operator.Div, "/" },
+			{ Operator.Neg, "--" },
+			
+			{ Operator.Cmm, "," },
+			{ Operator.PaL, "(" },
+			{ Operator.PaR, ")" },
+			
+			{ Operator.CoE, "==" },
+			{ Operator.CoN, "!=" },
+			{ Operator.CoL, "<" },
+			{ Operator.CLE, "<=" },
+			{ Operator.CoG, ">" },
+			{ Operator.CGE, ">=" },
+			
+			{ Operator.And, "&&" },
+			{ Operator.Or,  "||" },
+			{ Operator.Not, "!" },
+			{ Operator.Xor, "^^" },
+			
+			{ Operator.Eof, "$" },
+			{ Operator.Max, "Max" },
+			{ Operator.Val, "Val" },
+		};
+		
+#endif
 		
 		public String ExpressionString {
 			get { return _expression; }
@@ -217,8 +255,6 @@ namespace W3b.Sine {
 				return tokens.ToArray();
 			}
 		}
-		
-#endregion
 		
 		private void Advance() {
 			
@@ -304,23 +340,6 @@ namespace W3b.Sine {
 			
 			_ptoken = _token;
 			
-		}
-		
-		private static Boolean IsFunction(String functionName) {
-			
-			switch(functionName) {
-				case "sin":
-				case "cos":
-				case "tan":
-//				case "sinh":
-//				case "cosh":
-//				case "tanh":
-				case "cosec":
-				case "secant":
-				case "cotangent":
-					return true;
-			}
-			return false;
 		}
 		
 		private String Strtok() {
@@ -418,7 +437,7 @@ namespace W3b.Sine {
 					BigNum pa = _valueStack.Pop();
 					BigNum pb = _valueStack.Pop();
 					
-					Int32 exponent = Int32.Parse( pa.ToString() );
+					Int32 exponent = Int32.Parse( pa.ToString(), System.Globalization.NumberStyles.Integer, Cult.InvariantCulture );
 					_valueStack.Push( pb.Power( exponent ) );
 					
 					break;
@@ -442,8 +461,6 @@ namespace W3b.Sine {
 					Boolean eq = ea == eb;
 					Boolean lt = eb <  ea;
 					Boolean gt = eb >  ea;
-					
-					Boolean result = eq;
 					
 					if     ( op == Operator.CoE ) _valueStack.Push( eq       ? 1 : 0 );
 					else if( op == Operator.CoN ) _valueStack.Push( eq       ? 0 : 1 );
@@ -509,34 +526,6 @@ namespace W3b.Sine {
 			
 		}
 		
-		public static readonly Dictionary<Operator,String> OperatorSymbols = new Dictionary<Operator,String>() {
-			{ Operator.Add, "+" },
-			{ Operator.Sub, "-" },
-			{ Operator.Mul, "*" },
-			{ Operator.Div, "/" },
-			{ Operator.Neg, "--" },
-			
-			{ Operator.Cmm, "," },
-			{ Operator.PaL, "(" },
-			{ Operator.PaR, ")" },
-			
-			{ Operator.CoE, "==" },
-			{ Operator.CoN, "!=" },
-			{ Operator.CoL, "<" },
-			{ Operator.CLE, "<=" },
-			{ Operator.CoG, ">" },
-			{ Operator.CGE, ">=" },
-			
-			{ Operator.And, "&&" },
-			{ Operator.Or,  "||" },
-			{ Operator.Not, "!" },
-			{ Operator.Xor, "^^" },
-			
-			{ Operator.Eof, "$" },
-			{ Operator.Max, "Max" },
-			{ Operator.Val, "Val" },
-		};
-		
 		public override String ToString() {
 			
 			return ExpressionString;
@@ -544,7 +533,7 @@ namespace W3b.Sine {
 		
 	}
 	
-	public enum Operator { // numbering is importance because it's used as a lookup in the precedence table
+	internal enum Operator { // numbering is importance because it's used as a lookup in the precedence table
 // Arithmetic	
 		Add = 0,
 		Sub = 1,
