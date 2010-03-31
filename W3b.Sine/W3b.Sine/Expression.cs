@@ -434,8 +434,10 @@ namespace W3b.Sine {
 					BigNum pa = _valueStack.Pop();
 					BigNum pb = _valueStack.Pop();
 					
-					Int32 exponent = Int32.Parse( pa.ToString(), System.Globalization.NumberStyles.Integer, Cult.InvariantCulture );
-					_valueStack.Push( pb.Power( exponent ) );
+					_valueStack.Push( BigMath.Pow( pb, pa ) );
+					
+					//Int32 exponent = Int32.Parse( pa.ToString(), N.Integer | N.AllowExponent, Cult.InvariantCulture );
+					// _valueStack.Push( pb.Power( exponent ) );
 					
 					break;
 					

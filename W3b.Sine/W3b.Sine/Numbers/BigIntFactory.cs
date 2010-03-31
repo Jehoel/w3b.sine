@@ -23,15 +23,17 @@ namespace W3b.Sine {
 #endregion
 		
 		public override BigNum Create(long value) {
-			throw new NotImplementedException();
+			
+			return new BigInt( value );
 		}
 		
 		public override BigNum Create(decimal value) {
-			throw new NotImplementedException();
+			throw new NotSupportedException();
 		}
 		
 		public override BigNum Create(string value) {
-			throw new NotImplementedException();
+			
+			return new BigInt( value );
 		}
 		
 		public override BigNum Create(BigNum value) {

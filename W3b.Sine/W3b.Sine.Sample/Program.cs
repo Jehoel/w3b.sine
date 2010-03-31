@@ -13,6 +13,8 @@ namespace W3b.Sine {
 	
 	public static class Program {
 		
+		private static BigNumFactory Factory { get { return BigRationalFactory.Instance; } }
+		
 		public static Int32 Main(String[] args) {
 			
 			if(args.Length > 0) {
@@ -33,7 +35,8 @@ namespace W3b.Sine {
 					case "/TEST":
 					case "-TEST":
 						
-						BigNumTests.Test();
+//						BigNumTests.Test();
+						Console.WriteLine("Tests temporarily disabled");
 						break;
 						
 					default:
@@ -128,7 +131,7 @@ Implemented Functions:
 				
 				try {
 					
-					Expression xp = new Expression( expr );
+					Expression xp = new Expression( expr, Factory );
 					BigNum ret = xp.Evaluate( _symbols );
 					
 					if( _symbols.ContainsKey( name ) ) _symbols[name] = ret;
@@ -155,7 +158,7 @@ Implemented Functions:
 				
 			} else if( String.Equals(s, "test", StringComparison.OrdinalIgnoreCase) ) {
 				
-				BigNumTests.Test();
+//				BigNumTests.Test();
 				
 			} else {
 				
@@ -180,7 +183,7 @@ Implemented Functions:
 			
 			try {
 				
-				Expression expr = new Expression( expression );
+				Expression expr = new Expression( expression, Factory );
 				BigNum ret = expr.Evaluate( _symbols );
 				
 				Console.WriteLine("Result: " + ret.ToString() );
@@ -196,7 +199,7 @@ Implemented Functions:
 			
 			try {
 				
-				Expression expr = new Expression( expression );
+				Expression expr = new Expression( expression, Factory );
 				BigNum num = expr.Evaluate( _symbols );
 				
 				BigNum result = EvaluateFunction(function, num);
@@ -225,7 +228,7 @@ Implemented Functions:
 				case Function.Abs:   return BigMath.Abs( num );
 				case Function.Ceil:  return BigMath.Ceiling( num );
 				case Function.Floor: return BigMath.Floor( num );
-				case Function.Fact:  return BigMath.Factorial( num );
+				case Function.Fact:  return BigMath.Gamma( num );
 				
 				default:
 					throw new ExpressionException("Unknown or invalid function");				

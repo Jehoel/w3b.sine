@@ -23,15 +23,18 @@ namespace W3b.Sine {
 #endregion
 		
 		public override BigNum Create(long value) {
-			throw new NotImplementedException();
+			
+			return new BigRational( value.ToString() );
 		}
 		
 		public override BigNum Create(decimal value) {
-			throw new NotImplementedException();
+			
+			return new BigRational( value.ToString() );
 		}
 		
 		public override BigNum Create(string value) {
-			throw new NotImplementedException();
+			
+			return new BigRational( value );
 		}
 		
 		public override BigNum Create(BigNum value) {

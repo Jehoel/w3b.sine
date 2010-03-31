@@ -26,9 +26,16 @@ namespace W3b.Sine {
 		/// <remarks>If the BigNum type passed in is not the same type as 'this' the comparison must still be carried out.</remarks>
 		public abstract          Int32  CompareTo(BigNum other);
 		
+		public Boolean Equals(Int16  x) { return Equals( Factory.Create( x ) ); }
+		public Boolean Equals(Int32  x) { return Equals( Factory.Create( x ) ); }
+		public Boolean Equals(Int64  x) { return Equals( Factory.Create( x ) ); }
+		public Boolean Equals(Single x) { return Equals( Factory.Create( x ) ); }
+		public Boolean Equals(Double x) { return Equals( Factory.Create( x ) ); }
+		
 		public override Boolean Equals(Object obj) {
 			BigNum num = obj as BigNum;
-			return num == null ? false : Equals( num );
+			if( num == null ) num = Factory.Create( obj.ToString() );
+			return Equals( num );
 		}
 		
 		/// <summary>Performs a numeric value equality comparison.</summary>

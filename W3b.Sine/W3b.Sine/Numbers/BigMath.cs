@@ -42,9 +42,14 @@ namespace W3b.Sine {
 		
 #region Misc
 		
+		private static int cnt = 0;
+		
 		public static BigInt Gcd(BigInt x, BigInt y) {
 			
+			cnt++;
+			
 			if( y == 0 ) return x;
+			if( y == 1 ) return y;
 			
 			return Gcd( y, (BigInt)(x % y) );
 			

@@ -14,21 +14,24 @@ namespace W3b.Sine {
 		public BigInt(long number) {
 			
 			_v = new IntX( number );
+			_v.Normalize();
 		}
 		
 		public BigInt(String number) {
 			
 			_v = new IntX( number );
+			_v.Normalize();
 		}
 		
 		private BigInt(BigInt copyThis) {
 			
-			_v = new IntX( copyThis );
+			_v = new IntX( copyThis._v );
 			_v.Normalize();
 		}
 		
 		private BigInt(IntX value) {
 			_v = value;
+			_v.Normalize();
 		}
 		
 		public override BigNumFactory Factory {
@@ -49,10 +52,10 @@ namespace W3b.Sine {
 		
 		public override bool Equals(BigNum other) {
 			
-			if( !other.Floor().Equals( other ) ) { // check it's an integer
-				
-				return false;
-			}
+//			if( !other.Floor().Equals( other ) ) { // check it's an integer
+//				
+//				return false;
+//			}
 			
 			BigInt o = E( other );
 			
@@ -93,6 +96,10 @@ namespace W3b.Sine {
 		}
 		
 		protected override BigNum Modulo(BigNum divisor) {
+			
+			if( divisor.IsZero )
+				throw new DivideByZeroException("Cannot divide by zero");
+			
 			BigInt o = E(divisor);
 			return new BigInt( _v % o._v );
 		}
