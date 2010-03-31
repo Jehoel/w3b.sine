@@ -10,7 +10,7 @@
     </InheritanceLine>
     <TypeIdentifier>
       <HashCode>AAIAgAAABQAAABwMqAIDgAFEAAAARIAAAAwEAmAAQLA=</HashCode>
-      <FileName>BigFloat.cs</FileName>
+      <FileName>Numbers\BigFloat.cs</FileName>
     </TypeIdentifier>
   </Class>
   <Class Name="W3b.Sine.BigInt" Collapsed="true">
@@ -24,22 +24,22 @@
       </Path>
     </InheritanceLine>
     <TypeIdentifier>
-      <HashCode>AAIAAAAAAQAAABwEoAABAAEAAAAAAIAAAAAECGAAADA=</HashCode>
-      <FileName>BigInt.cs</FileName>
+      <HashCode>AAIAAAAAAQAAABwEoAABAAEAAAAAAIAAgAAECmAAADA=</HashCode>
+      <FileName>Numbers\BigInt.cs</FileName>
     </TypeIdentifier>
   </Class>
   <Class Name="W3b.Sine.BigMath">
     <Position X="1.75" Y="8.25" Width="1.5" />
     <TypeIdentifier>
-      <HashCode>AQAAAAAAARAgBAgAkAAEAAAAAAGAEAAAAAAAAEAAAAA=</HashCode>
-      <FileName>BigMath.cs</FileName>
+      <HashCode>AQACAAAAARAgBAgAkAAEAAAAAAmAEAAAAAAAAUABAAA=</HashCode>
+      <FileName>Numbers\BigMath.cs</FileName>
     </TypeIdentifier>
   </Class>
   <Class Name="W3b.Sine.BigNum">
     <Position X="1.75" Y="1.25" Width="1.5" />
     <TypeIdentifier>
       <HashCode>AAIAAAAAAQAAABwM4AWDAgEAAAIAAIABAAAECGAABzA=</HashCode>
-      <FileName>BigNum.cs</FileName>
+      <FileName>Numbers\BigNum.cs</FileName>
     </TypeIdentifier>
     <Lollipop Position="0.2" />
   </Class>
@@ -55,7 +55,7 @@
     </InheritanceLine>
     <TypeIdentifier>
       <HashCode>AAIAAAAAAQAAABwEoAABAgEABAAAAIQAAAAEAmAAADA=</HashCode>
-      <FileName>BigRational.cs</FileName>
+      <FileName>Numbers\BigRational.cs</FileName>
     </TypeIdentifier>
   </Class>
   <Class Name="W3b.Sine.Expression">
@@ -66,7 +66,7 @@
     </TypeIdentifier>
   </Class>
   <Class Name="W3b.Sine.ExpressionException" Collapsed="true">
-    <Position X="11.25" Y="6" Width="1.75" />
+    <Position X="11.25" Y="6.5" Width="1.75" />
     <TypeIdentifier>
       <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
       <FileName>Expression.cs</FileName>
@@ -75,7 +75,7 @@
   <Class Name="W3b.Sine.Extensions">
     <Position X="13.25" Y="2.5" Width="1.5" />
     <TypeIdentifier>
-      <HashCode>AAAAAAAAAAAAAQAAAAAAAAAAAAAIAAAAAAAAAAAAAAA=</HashCode>
+      <HashCode>AAAAAAAAAAAAAQAAAAAAAAAAAAAIAAAAAAAAQAAAAAA=</HashCode>
       <FileName>Extensions.cs</FileName>
     </TypeIdentifier>
   </Class>
@@ -83,35 +83,35 @@
     <Position X="6.75" Y="5.75" Width="1.5" />
     <TypeIdentifier>
       <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAACAAAEAAQAAAAAAAAAA=</HashCode>
-      <FileName>BigIntFactory.cs</FileName>
+      <FileName>Numbers\BigIntFactory.cs</FileName>
     </TypeIdentifier>
   </Class>
   <Class Name="W3b.Sine.BigNumFactory">
     <Position X="4.5" Y="4.75" Width="1.5" />
     <TypeIdentifier>
       <HashCode>AIEAAAQIAsAAAIJAACFCAQGQAwBIAEAABEEFiABAAAA=</HashCode>
-      <FileName>BigNumFactory.cs</FileName>
+      <FileName>Numbers\BigNumFactory.cs</FileName>
     </TypeIdentifier>
   </Class>
   <Class Name="W3b.Sine.BigFloatFactory" Collapsed="true">
     <Position X="6.75" Y="4.75" Width="1.5" />
     <TypeIdentifier>
       <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAACAAAEAAQAAAAAAAAAA=</HashCode>
-      <FileName>BigFloatFactory.cs</FileName>
+      <FileName>Numbers\BigFloatFactory.cs</FileName>
     </TypeIdentifier>
   </Class>
   <Class Name="W3b.Sine.BigRationalFactory" Collapsed="true">
     <Position X="6.75" Y="6.75" Width="1.5" />
     <TypeIdentifier>
       <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAACAAAEAAQAAAAAAAAAA=</HashCode>
-      <FileName>BigRationalFactory.cs</FileName>
+      <FileName>Numbers\BigRationalFactory.cs</FileName>
     </TypeIdentifier>
   </Class>
   <Enum Name="W3b.Sine.BigNumImpl" Collapsed="true">
     <Position X="8.5" Y="1.25" Width="1.5" />
     <TypeIdentifier>
       <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAAAAAAAgACA=</HashCode>
-      <FileName>BigNumImpl.cs</FileName>
+      <FileName>Numbers\BigNumImpl.cs</FileName>
     </TypeIdentifier>
   </Enum>
   <Enum Name="W3b.Sine.Operator" Collapsed="true">

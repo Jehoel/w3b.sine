@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Text;
 using System.Globalization;
+using System.Collections;
 
 // Extension methods seem to require System.Core.dll, which is not in .NET2.0
 // so here's an ersatz Extension attribute class
@@ -86,5 +87,20 @@ namespace W3b.Sine {
 			
 		}
 		
+		public static String ToStringList(this IEnumerable enumerable) {
+			
+			StringBuilder sb = new StringBuilder();
+			bool first = true;
+			
+			foreach(Object o in enumerable) {
+				
+				if( !first ) sb.Append(", ");
+				first = false;
+				
+				sb.Append( o.ToString() );
+			}
+			
+			return sb.ToString();
+		}
 	}
 }

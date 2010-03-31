@@ -6,8 +6,8 @@ using Cult = System.Globalization.CultureInfo;
 
 namespace W3b.Sine {
 	
-	/// <summary>Implements arbitrary-precsision arithmetic with a decimal byte array.</summary>
-	public class BigNumDec : BigNum {
+	/// <summary>Implements arbitrary-precsision floating-point arithmetic with a decimal byte array.</summary>
+	public class BigFloat : BigNum {
 		
 		private List<SByte> _data;
 		private Boolean     _sign;
@@ -29,22 +29,26 @@ namespace W3b.Sine {
 		
 		private readonly static Char[] _digits = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F' };
 		
-		/// <summary>Creates a new BigNumDec with an empty data list. Not identical to zero.</summary>
-		public BigNumDec() {
+		/// <summary>Creates a new BigFloat with an empty data list. Not identical to zero.</summary>
+		public BigFloat() {
 			_data = new List<SByte>();
 			_sign = true;
 		}
 		
-		public BigNumDec(Int64 value) : this() {
+		public BigFloat(Int64 value) : this() {
 			Load( value );
 		}
 		
-		public BigNumDec(Double value) : this() {
+		public BigFloat(Double value) : this() {
 			Load( value );
 		}
 		
-		public BigNumDec(String value) : this() {
+		public BigFloat(String value) : this() {
 			Load(value);
+		}
+		
+		public override BigNumFactory Factory {
+			get { return BigFloatFactory.Instance; }
 		}
 		
 		protected void Load(String textRepresentation) {
@@ -56,7 +60,7 @@ namespace W3b.Sine {
 			if(textRepresentation.Length == 0) {
 				_data.Add( 0 );
 				_exp = 0;
-				Sign = true;
+				_sign = true;
 				return;
 			}
 			
@@ -78,7 +82,7 @@ namespace W3b.Sine {
 					
 				} else if(c == '+' || c == '-') {
 					
-					Sign = c == '+';
+					_sign = c == '+';
 					
 				} else if(c == '.') {
 					
@@ -123,42 +127,30 @@ namespace W3b.Sine {
 #region Overriden Methods
 		
 		protected override BigNum Add(BigNum other) {
-			return BigNumDec.Add( this, (BigNumDec)other );
+			return BigFloat.Add( this, (BigFloat)other );
 		}
 			
 		protected override BigNum Multiply(BigNum multiplicand) {
-			return BigNumDec.Multiply(this, (BigNumDec)multiplicand);
+			return BigFloat.Multiply(this, (BigFloat)multiplicand);
 		}
 		
 		protected override BigNum Divide(BigNum divisor) {
-			return BigNumDec.Divide(this, (BigNumDec)divisor);
-		}
-		
-		protected override BigNum Modulo(BigNum divisor) {
-			return BigNumDec.Modulo(this, (BigNumDec)divisor);
-		}
-		
-		public override Int32 CompareTo(Object obj) {
-			
-			if(obj == null) return 1;
-			
-			try {
-				
-				BigNumDec dec = new BigNumDec( obj.ToString() );
-				
-				return CompareTo( dec );
-				
-			} catch(Exception) {
-				return 1;
-			}
-			
+			return BigFloat.Divide(this, (BigFloat)divisor);
 		}
 		
 		public override Int32 CompareTo(BigNum other) {
 			
-			BigNumDec o = other as BigNumDec;
+			BigFloat o = other as BigFloat;
 			
-			if(o == null) return 1;
+			if( o == null ) {
+				
+				o = (BigFloat)Factory.Create( other );
+			}
+			
+			return CompareTo( o );
+		}
+		
+		public Int32 CompareTo(BigFloat o) {
 			
 			if( Equals(o) ) return 0;
 			
@@ -183,24 +175,24 @@ namespace W3b.Sine {
 		}
 		
 		protected override BigNum Negate() {
-			BigNum result = Clone();
-			result.Sign = !result.Sign;
+			BigFloat result = (BigFloat)Clone();
+			result._sign = !result.Sign;
 			return result;
 		}
 		
 		protected internal override BigNum Absolute() {
-			BigNum dolly = Clone();
-			dolly.Sign = true;
+			BigFloat dolly = (BigFloat)Clone();
+			dolly._sign = true;
 			return dolly;
 		}
 		
 		protected internal override BigNum Floor() {
-			return BigNumDec.Subtract( this, GetFractionalPart() );
+			return BigFloat.Subtract( this, GetFractionalPart() );
 		}
 		
 		protected internal override BigNum Ceiling() {
 			// using the identity ceil(x) == -floor(-x)
-			BigNumDec floored = (BigNumDec)Negate().Floor();
+			BigFloat floored = (BigFloat)Negate().Floor();
 			return floored.Negate();
 		}
 		
@@ -211,8 +203,8 @@ namespace W3b.Sine {
 		}
 		
 		public override BigNum Clone() {
-			BigNumDec dolly = new BigNumDec();
-			dolly.Sign = Sign;
+			BigFloat dolly = new BigFloat();
+			dolly._sign = Sign;
 			dolly._exp = _exp;
 			dolly._data.AddRange( _data );
 			return dolly;
@@ -223,17 +215,17 @@ namespace W3b.Sine {
 			if( obj == null ) return false;
 			
 			if( obj is BigNum ) {
-				BigNumDec bn = obj as BigNumDec;
+				BigFloat bn = obj as BigFloat;
 				return bn == null ? false : Equals( bn );
 			}
 			
 			String s = obj.ToString();
-			BigNumDec b = new BigNumDec( s );
+			BigFloat b = new BigFloat( s );
 			
 			return Equals( b );
 			
 		}
-		public Boolean Equals(BigNumDec other) {
+		public Boolean Equals(BigFloat other) {
 			
 			if( other == null ) return false;
 			if(Object.ReferenceEquals(this, other)) return true;
@@ -250,7 +242,7 @@ namespace W3b.Sine {
 			
 		}
 		public override bool Equals(BigNum other) {
-			return Equals( other as BigNumDec );
+			return Equals( other as BigFloat );
 		}
 		
 		public override Int32 GetHashCode() {
@@ -307,7 +299,6 @@ namespace W3b.Sine {
 		
 		public override Boolean Sign {
 			get { return _sign; }
-			set { _sign = value; }
 		}
 		
 #endregion
@@ -315,29 +306,29 @@ namespace W3b.Sine {
 #region Operation Implementation
 		// there really needs to be a new feature in OOP where interfaces can define static methods without having to use factory classes or the singleton pattern
 		
-		public static BigNumDec Add(BigNumDec a, BigNumDec b) {
+		public static BigFloat Add(BigFloat a, BigFloat b) {
 			return Add(a, b, true);
 		}
 		
-		private static BigNumDec Add(BigNumDec a, BigNumDec b, Boolean normalise) {
+		private static BigFloat Add(BigFloat a, BigFloat b, Boolean normalise) {
 			
 			a.Normalise();
 			b.Normalise();
 			
-			a = (BigNumDec)a.Clone();
-			b = (BigNumDec)b.Clone();
+			a = (BigFloat)a.Clone();
+			b = (BigFloat)b.Clone();
 			
 			if(a.IsZero && b.IsZero) return a;
 			if(a.Sign && !b.Sign) {
-				b.Sign = true;
+				b._sign = true;
 				return Subtract(a, b, normalise);
 			}
 			if(!a.Sign && b.Sign) {
-				a.Sign = true;
+				b._sign = true;
 				return Subtract(b, a, normalise);
 			}
 			
-			BigNumDec result = new BigNumDec();
+			BigFloat result = new BigFloat();
 			
 			a.AlignExponent( b );
 			b.AlignExponent( a );
@@ -345,7 +336,7 @@ namespace W3b.Sine {
 			result._exp = a._exp;
 			
 			if(b.Length > a.Length) { // then switch them around
-				BigNumDec temp = a;
+				BigFloat temp = a;
 				a = b;
 				b = temp;
 			}
@@ -366,7 +357,7 @@ namespace W3b.Sine {
 			}
 			if( carry > 0 ) result._data.Add( carry );
 			
-			result.Sign = a.Sign && b.Sign;
+			result._sign = a.Sign && b.Sign;
 			
 /*			if(normalise) // normalising shouldn't be necessary, but what the heck
 				result.Normalise(); */
@@ -375,31 +366,31 @@ namespace W3b.Sine {
 			
 		}
 		
-		public static BigNumDec Subtract(BigNumDec a, BigNumDec b) {
+		public static BigFloat Subtract(BigFloat a, BigFloat b) {
 			return Subtract(a, b, true);
 		}
 		
-		private static BigNumDec Subtract(BigNumDec a, BigNumDec b, Boolean normalise) {
+		private static BigFloat Subtract(BigFloat a, BigFloat b, Boolean normalise) {
 			
 			a.Normalise();
 			b.Normalise();
 			
-			a = (BigNumDec)a.Clone();
-			b = (BigNumDec)b.Clone();
+			a = (BigFloat)a.Clone();
+			b = (BigFloat)b.Clone();
 			
 			if( a.IsZero && b.IsZero ) return a;
 			if( a.Sign && !b.Sign ) {
-				b.Sign = true;
+				b._sign = true;
 				return Add(a, b, normalise);
 			}
 			if( !a.Sign && b.Sign ) {
-				a.Sign = true;
-				BigNumDec added = Add(a, b, normalise);
-				return (BigNumDec)added.Negate();
+				a._sign = true;
+				BigFloat added = Add(a, b, normalise);
+				return (BigFloat)added.Negate();
 			}
 			
 			
-			BigNumDec result = new BigNumDec();
+			BigFloat result = new BigFloat();
 			
 			a.AlignExponent( b );
 			b.AlignExponent( a );
@@ -408,21 +399,21 @@ namespace W3b.Sine {
 			
 			Boolean wasSwapped = false;
 			if(b.Length > a.Length) { // then switch them around
-				BigNumDec temp = a;
+				BigFloat temp = a;
 				a = b;
 				b = temp;
 				wasSwapped = true;
 			} else {
 				// if same length, check magnitude
-				BigNumDec a1 = (BigNumDec)a.Absolute();
-				BigNumDec b1 = (BigNumDec)b.Absolute();
+				BigFloat a1 = (BigFloat)a.Absolute();
+				BigFloat b1 = (BigFloat)b.Absolute();
 				if(a1 < b1) {
-					BigNumDec temp = a;
+					BigFloat temp = a;
 					a = b;
 					b = temp;
 					wasSwapped = true;
 				} else if( !(a1 > b1) ) { // i.e. equal
-					return new BigNumDec(); // return zero
+					return new BigFloat(); // return zero
 				}
 			}
 			
@@ -455,7 +446,7 @@ namespace W3b.Sine {
 				result._data.Add( digit );
 			}
 			
-			result.Sign = a.Sign && b.Sign ? !wasSwapped : wasSwapped;
+			result._sign = a.Sign && b.Sign ? !wasSwapped : wasSwapped;
 			
 /*			if(normalise)
 				result.Normalise(); */
@@ -463,27 +454,27 @@ namespace W3b.Sine {
 			return result;
 		}
 		
-		public static BigNumDec Multiply(BigNumDec a, BigNumDec b) {
+		public static BigFloat Multiply(BigFloat a, BigFloat b) {
 			
-			a = (BigNumDec)a.Clone();
-			b = (BigNumDec)b.Clone();
+			a = (BigFloat)a.Clone();
+			b = (BigFloat)b.Clone();
 			
 			if(b.Length > a.Length) { // then switch them around
-				BigNumDec temp = a;
+				BigFloat temp = a;
 				a = b;
 				b = temp;
 			}
 			
-			BigNumDec retval = new BigNumDec();
-			List<BigNumDec> rows = new List<BigNumDec>();
+			BigFloat retval = new BigFloat();
+			List<BigFloat> rows = new List<BigFloat>();
 			
-			retval.Sign = a.Sign == b.Sign;
-			retval._exp = a._exp + b._exp;
+			retval._sign = a.Sign == b.Sign;
+			retval._exp  = a._exp + b._exp;
 			
 			// for each digit in b
 			for(int i=0;i<b.Length;i++) {
 				
-				BigNumDec row = new BigNumDec();
+				BigFloat row = new BigFloat();
 				row._exp = retval._exp;
 				
 				Int32 digit = 0, carry = 0;
@@ -508,8 +499,8 @@ namespace W3b.Sine {
 			}
 			
 			// sum the rows to give the result
-			foreach(BigNumDec row in rows) {
-				retval  = (BigNumDec)retval.Add(row);
+			foreach(BigFloat row in rows) {
+				retval  = (BigFloat)retval.Add(row);
 			}
 			
 			retval.Normalise();
@@ -518,28 +509,28 @@ namespace W3b.Sine {
 			
 		}
 		
-		public static BigNumDec Divide(BigNumDec dividend, BigNumDec divisor) {
+		public static BigFloat Divide(BigFloat dividend, BigFloat divisor) {
 			Boolean wasExact;
 			return Divide(dividend, divisor, out wasExact);
 		}
 		
-		public static BigNumDec Divide(BigNumDec dividend, BigNumDec divisor, out Boolean isExact) {
+		public static BigFloat Divide(BigFloat dividend, BigFloat divisor, out Boolean isExact) {
 			
 			if(divisor.IsZero) throw new DivideByZeroException();
 			
 			isExact = true;
-			if(dividend.IsZero) return (BigNumDec)dividend.Clone();
+			if(dividend.IsZero) return (BigFloat)dividend.Clone();
 			
 			///////////////////////////////
 			
-			BigNumDec quotient = new BigNumDec();
-			quotient.Sign = dividend.Sign == divisor.Sign;
+			BigFloat quotient = new BigFloat();
+			quotient._sign = dividend.Sign == divisor.Sign;
 			
-			dividend = (BigNumDec)dividend.Absolute();
-			divisor  = (BigNumDec)divisor.Absolute();
+			dividend = (BigFloat)dividend.Absolute();
+			divisor  = (BigFloat)divisor.Absolute();
 			
-			BigNumDec aPortion;
-			BigNumDec bDigit = null;
+			BigFloat aPortion;
+			BigFloat bDigit = null;
 			
 			//////////////////////////////
 			
@@ -551,7 +542,7 @@ namespace W3b.Sine {
 			dividend._exp = 0;
 			divisor._exp  = 0;
 			
-			aPortion = new BigNumDec();
+			aPortion = new BigFloat();
 			
 			Int32 bump = 0, c = -1;
 			Boolean hump = false;
@@ -576,13 +567,13 @@ namespace W3b.Sine {
 				bDigit = 0; //tt = 0;
 				c = 0;
 				while( bDigit < aPortion ) {
-					bDigit = (BigNumDec)bDigit.Add(divisor); //tt += b;
+					bDigit = (BigFloat)bDigit.Add(divisor); //tt += b;
 					c++;
 				}
 				if( bDigit != aPortion ) {
 					c--;
-					bDigit = new BigNumDec( c );
-					bDigit = (BigNumDec)bDigit.Multiply(divisor); //tt *= b;
+					bDigit = new BigFloat( c );
+					bDigit = (BigFloat)bDigit.Multiply(divisor); //tt *= b;
 					isExact = false;
 				} else {
 					isExact = true;
@@ -598,9 +589,9 @@ namespace W3b.Sine {
 				if( aPortion.Length > dividend.Length ) dividend = aPortion;
 				bDigit = bDigit.Msd( dividend.Length - bump );
 				
-				aPortion = BigNumDec.Add(dividend, (BigNumDec)bDigit.Negate(), false );
+				aPortion = BigFloat.Add(dividend, (BigFloat)bDigit.Negate(), false );
 				
-				dividend = (BigNumDec)aPortion.Clone();
+				dividend = (BigFloat)aPortion.Clone();
 				
 				if( aPortion.IsZero ) break; // no more work necessary
 				
@@ -636,25 +627,6 @@ namespace W3b.Sine {
 			
 		}
 		
-		public static BigNumDec Modulo(BigNumDec a, BigNumDec b) {
-			
-			// a % b == a  - ( b * Floor[a / b] )
-			
-			if(b == 0) throw new DivideByZeroException("Divisor b cannot be zero");
-			if(a.IsZero) return new BigNumDec();
-			
-			a = (BigNumDec)a.Clone();
-			b = (BigNumDec)b.Clone();
-			
-			BigNumDec floored = ((a / b) as BigNumDec).Floor() as BigNumDec;
-			BigNumDec multbyb = (b * floored) as BigNumDec;
-			BigNumDec retval  = (a - multbyb) as BigNumDec;
-			
-			retval.Normalise();
-			
-			return retval;
-		}
-		
 		protected internal override void Truncate(Int32 significance) {
 			
 			Normalise();
@@ -674,8 +646,8 @@ namespace W3b.Sine {
 		
 		/// <summary>Nabs the most significant digits of this number. If <paramref name="count" /> is greater than the length of the number it pads zeros.</summary>
 		/// <param name="count">Number of digits to return</param>
-		private BigNumDec Msd(Int32 count) {
-			BigNumDec retVal = new BigNumDec();
+		private BigFloat Msd(Int32 count) {
+			BigFloat retVal = new BigFloat();
 			if(count > Length) {
 /*				Int32 i = 0;
 				while( i < count - Length) {
@@ -694,7 +666,7 @@ namespace W3b.Sine {
 		}
 		
 		/// <summary>Makes the exponent values of both numbers equal by padding zeros.</summary>
-		private void AlignExponent(BigNumDec withThis) {
+		private void AlignExponent(BigFloat withThis) {
 			while( _exp > withThis._exp ) {
 				_exp--;
 				_data.Insert( 0, 0 );
@@ -707,7 +679,7 @@ namespace W3b.Sine {
 				if( _data[i] != 0 ) break;
 				_data.RemoveAt( i );
 			}
-			if( Length == 0 ) Sign = true; // can't have "negative zero"
+			if( Length == 0 ) _sign = true; // can't have "negative zero"
 			/*else {
 				while( _data[0] == 0 ) { // removes least-significant zeros
 					_data.RemoveAt(0);
@@ -723,13 +695,13 @@ namespace W3b.Sine {
 			get { return _data[index]; }
 		}
 		
-		private BigNumDec GetFractionalPart() {
+		private BigFloat GetFractionalPart() {
 			
 			if(_exp == 0) return 0;
 			
 			Normalise();
 			
-			BigNumDec retVal = new BigNumDec();
+			BigFloat retVal = new BigFloat();
 			for(int i=0;i<Length && i<-_exp;i++) { // get all the digits to the right of the radix point
 				retVal._data.Add( this[i] );
 			}
@@ -739,13 +711,13 @@ namespace W3b.Sine {
 			
 		}
 		
-		public static implicit operator BigNumDec(String s) {
+		public static implicit operator BigFloat(String s) {
 			if(s == null) return null;
-			return new BigNumDec(s);
+			return new BigFloat(s);
 		}
 		
-		public static implicit operator BigNumDec(Int64 i) {
-			return new BigNumDec(i);
+		public static implicit operator BigFloat(Int64 i) {
+			return new BigFloat(i);
 		}
 		
 #endregion

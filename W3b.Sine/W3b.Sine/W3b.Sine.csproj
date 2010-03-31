@@ -43,15 +43,31 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Oyster.IntX, Version=0.9.3.3, Culture=neutral, PublicKeyToken=1744b76c74eaee1e, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\_ref\Oyster.IntX.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AssemblyInfo.cs" />
-    <Compile Include="BigNum.cs" />
-    <Compile Include="BigNumDec.cs" />
-    <Compile Include="BiigMath.cs" />
+    <Compile Include="Numbers\BigFloatFactory.cs" />
+    <Compile Include="Numbers\BigInt.cs" />
+    <Compile Include="Numbers\BigIntFactory.cs" />
+    <Compile Include="Numbers\BigNum.cs" />
+    <Compile Include="Numbers\BigFloat.cs" />
+    <Compile Include="Numbers\BigNumException.cs" />
+    <Compile Include="Numbers\BigNumFactory.cs" />
+    <Compile Include="Numbers\BigNumImpl.cs" />
+    <Compile Include="Numbers\BigRational.cs" />
+    <Compile Include="Numbers\BigMath.cs" />
+    <Compile Include="Numbers\BigRationalFactory.cs" />
     <Compile Include="Expression.cs" />
+    <Compile Include="ExpressionContext.cs" />
     <Compile Include="Extensions.cs" />
+    <None Include="ClassDiagram.cd" />
     <None Include="Math.cs" />
   </ItemGroup>
   <ItemGroup>

@@ -38,9 +38,25 @@ namespace W3b.Sine {
 			return x > y ? y : x;
 		}
 		
+#endregion
 		
+#region Misc
+		
+		public static BigInt Gcd(BigInt x, BigInt y) {
+			
+			if( y == 0 ) return x;
+			
+			return Gcd( y, (BigInt)(x % y) );
+			
+		}
+		
+		public static Boolean IsInteger(BigNum x) {
+			
+			return x.Floor() == x;
+		}
 		
 #endregion
+		
 #region Exponentiation and Factorial
 		
 		public static BigNum Pow(BigNum num, Int32 exponent) {
@@ -48,84 +64,146 @@ namespace W3b.Sine {
 			return num.Power( exponent );
 		}
 		
-	#if EnableNotYetImplemented
-		
 		public static BigNum Pow(BigNum num, BigNum exponent) {
 			
 			// http://en.wikipedia.org/wiki/Exponentiation
 			
 			// a^x == E^( x * ln(a) )
 			
-			throw new NotImplementedException();
+			return Exp( exponent * Log( num ) );
 		}
 		
 		/// <summary>Computes Euler's number raised to the specified exponent</summary>
 		public static BigNum Exp(BigNum exponent) {
 			
+			const int iterations = 25;
+			
 			// E^x ~= sum(int i = 0 to inf, x^i/i!)
 			//     ~= 1 + x + x^2/2! + x^3/3! + etc
 			
-			throw new NotImplementedException();
+			BigNum ret = exponent.Factory.Unity;
+			ret += exponent;
+			
+			for(int i=2;i<iterations;i++) {
+				
+				BigNum numerator = exponent.Power( i );
+				BigNum denominat = exponent.Factory.Create( Factorial( i ) );
+				
+				BigNum addThis = numerator / denominat;
+				
+				ret += addThis;
+			}
+			
+			return ret;
 		}
 		
 		/// <summary>Computes the Natural Logarithm (Log to base E, or Ln(x)) of the specified argument</summary>
-		public static BigNum Log(BigNum argument) {
+		public static BigNum Log(BigNum x) {
 			
-			// Ln(x) ~= 
+			BigNumFactory f = x.Factory;
 			
-			throw new NotImplementedException();
+			if( x <= f.Zero ) throw new ArgumentOutOfRangeException("x", "Must be a positive real number");
+			
+			const int iterations = 25;
+			
+			BigNum one = f.Unity;
+			BigNum two = f.Create(2);
+			
+			// ln(z) == 2 * Sum(n=0;n<inf;n++) { (1 / (2n+1) ) * Pow( (z-1)/(z+1), 2n+1) }
+			
+			BigNum ret = f.Zero;
+			
+			for(int n=0;n<iterations;n++) {
+				
+				int denom = 2*n + 1;
+				
+				Double coefficient = 1 / denom;
+				BigNum otherHalf   = Pow( ( x - one ) / ( x + one ), denom ); // hurrah for integer powers
+				
+				BigNum sumThis = f.Create( coefficient ) * otherHalf;
+				ret += sumThis;
+			}
+			
+			return ret;
 		}
 		
-		private static BigNum LogLT1(BigNum x) {
-			// Ln(x) ~= (x-1) - (x-1)^2/2 + (x-1)^3/3 - (x-1)^4/4 + ....
-			throw new NotImplementedException();
-		}
-		
-		private static BigNum LogGT1(BigNum x) {
-			// Ln(y/(y-1)) ~= 1/y + 1/(2y^2) + 1/(3y^3) + ...
-			// x == y/(y-1)
-			// TODO: Reduce to get y
-			throw new NotImplementedException();
+		/// <summary>Computes the Logarithm of x for base b. So log10(100) is Log(10,100)</summary>
+		public static BigNum Log(BigNum x, BigNum b) {
+			
+			return Log( x ) / Log( b );
 		}
 		
 		/////////////////////////////////////////
 		
-		public static BigNum Gamma(BigNum num) {
+		public static BigNum Gamma(BigNum z) {
 			
 			// http://www.rskey.org/gamma.htm
-			
 			// n! = nn√2πn exp(1/[12n + 2/(5n + 53/42n)] – n)(1 + O(n–8))
+			// which requires the exponential function, and some function O (which the webpage fails to define, hmmm)
 			
-			// which requires the exponential function...
+			// so here's the infinite product series from Wikipedia instead
 			
-			throw new NotImplementedException();
+			// Gamma(z) == (1/z) * Prod(n=1;n<inf;n++) {  (1+1/n)^z / (1+z/n) }
 			
+			const Int32 iterations = 25;
+			
+			BigNumFactory f = z.Factory;
+			
+			BigNum ret = z.Power(-1);
+			
+			for(int n=1;n<iterations;n++) {
+				
+				Double numerator1 = 1 + (1/n);
+				BigNum numerator2 = Pow( f.Create( numerator1 ), z );
+				
+				BigNum denominato = f.Unity + z / f.Create(n);
+				
+				BigNum prodThis = numerator2 / denominato;
+				
+				ret *= prodThis;
+			}
+			
+			return ret;
 		}
 		
-	#endif
-		
-		public static BigNum Factorial(BigNum num) {
+		public static BigInt Factorial(BigInt num) {
 			// HACK: Is there a more efficient implementation?
 			// I know there is a way to cache and use earlier results, but not much more
 			
 			// also, note this function fails if num is non-integer. This should be the Gamma function instead
 			
-			if(num.IsZero) return 1;
-			if(num < 0) throw new ArgumentException("Argument must be greater than or equal to zero", "num");
-			return num * Factorial( num - 1 );
+			BigInt one = (BigInt)BigIntFactory.Instance.Unity;
+			
+			if(num.IsZero) return one;
+			if(num < num.Factory.Zero) throw new ArgumentException("Argument must be greater than or equal to zero", "num");
+			
+			return (BigInt)( num * Factorial( (BigInt)(num - one) ) );
+		}
+		
+		internal static Int32 Factorial(Int32 number) {
+			if(number == 0) return 1;
+			return number * Factorial( number - 1 );
+		}
+		
+		internal static Double Factorial(Double number) {
+			if( number == 0 ) return 1;
+			return number * Factorial( number - 1 );
 		}
 		
 #endregion
+		
 #region Trig
 		
 		public static BigNum Sin(BigNum theta) {
 			
+			BigNumFactory f = theta.Factory;
+			
 			// calculate sine using the taylor series, the infinite sum of x^r/r! but to n iterations
-			BigNum retVal = 0;
+			BigNum retVal = f.Zero;
 			
 			// first, reduce this to between 0 and 2Pi
-			if( theta > BigNum.TwoPi || theta < 0 )
-				theta = theta % BigNum.TwoPi;
+			if( theta > f.TwoPi || theta < f.Zero )
+				theta = theta % f.TwoPi;
 			
 			Boolean subtract = false;
 			
@@ -142,7 +220,9 @@ namespace W3b.Sine {
 				
 				Double addThis = subtract ? -element : element;
 				
-				retVal += addThis;
+				BigNum addThisBig = f.Create( addThis );
+				
+				retVal += addThisBig;
 				
 				subtract = !subtract;
 			}
@@ -177,7 +257,7 @@ namespace W3b.Sine {
 			
 			// using Cos(x) == Sin(x + 90deg)
 			
-			theta += BigNum.HalfPi;
+			theta += theta.Factory.HalfPi;
 			
 			return Sin( theta );
 		}
@@ -204,16 +284,9 @@ namespace W3b.Sine {
 			return Tan(theta).Power(-1);
 		}
 		
-#endregion
-#region Internal Utility
-		
-		internal static Double Factorial(Double number) {
-			if(number == 0) return 1;
-			return number * Factorial( (double)( number - 1 ) );
-		}
+		// TODO: Arctan/Arcsin/Arccos
 		
 #endregion
-		
 		
 	}
 }

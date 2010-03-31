@@ -9,16 +9,7 @@ using N    = System.Globalization.NumberStyles;
 using Cult = System.Globalization.CultureInfo;
 using P    = W3b.Sine.Precedence;
 
-// TODO: Update this class with the latest from Anolis
-// and look into functions
-
 namespace W3b.Sine {
-	
-	// TODO:
-		// * Add support for boolean operators &&, ||, ^^, !
-		// * Add support for functions, e.g. sin(), a function can be defined in the symbol table: with that functions' expression as the dictionary value
-			// this is a bit hard. I'll leave it for now
-		// I think booleans can be supported by having false == 0 and true == non-zero
 	
 	/// <summary>A C# implementation of Tom Niemann's Operator Precedence Parsing system ( http://epaperpress.com/oper/index.html ).</summary>
 	public partial class Expression {
@@ -89,6 +80,8 @@ namespace W3b.Sine {
 		
 		private Object _lock = new Object();
 		
+		private BigNumFactory _factory;
+		
 		private Stack<BigNum>   _valueStack    = new Stack<BigNum>();
 		private Stack<Operator> _operatorStack = new Stack<Operator>();
 		
@@ -102,8 +95,9 @@ namespace W3b.Sine {
 		private Boolean  _isFirstToken;
 		private Int32    _toki;
 		
-		public Expression(String expression) {
+		public Expression(String expression, BigNumFactory factory) {
 			
+			_factory    = factory;
 			_expression = expression;
 		}
 		
@@ -120,7 +114,7 @@ namespace W3b.Sine {
 			
 			_token  = Operator.Eof;
 			_ptoken = Operator.Eof;
-			_value  = 0;
+			_value  = _factory.Zero;
 			_isFirstToken = true;
 			_toki         = 0;
 			
@@ -301,7 +295,7 @@ namespace W3b.Sine {
 						// if it's a name, resolve it
 						
 						// TODO: Make BigNum respect Culture's number format settings
-						if( BigNum.TryParse( s, out _value ) ) {
+						if( _factory.TryParse( s, out _value ) ) {
 							
 							_token = Operator.Val;
 							
@@ -381,6 +375,9 @@ namespace W3b.Sine {
 		}
 		
 		private void Reduce() {
+			
+			BigNum one = _factory.Unity;
+			BigNum zer = _factory.Zero;
 			
 			Operator op = _operatorStack.Peek();
 			switch(op) {
@@ -462,12 +459,12 @@ namespace W3b.Sine {
 					Boolean lt = eb <  ea;
 					Boolean gt = eb >  ea;
 					
-					if     ( op == Operator.CoE ) _valueStack.Push( eq       ? 1 : 0 );
-					else if( op == Operator.CoN ) _valueStack.Push( eq       ? 0 : 1 );
-					else if( op == Operator.CoL ) _valueStack.Push( lt       ? 1 : 0 );
-					else if( op == Operator.CLE ) _valueStack.Push( lt || eq ? 1 : 0 );
-					else if( op == Operator.CoG ) _valueStack.Push( gt       ? 1 : 0 );
-					else if( op == Operator.CGE ) _valueStack.Push( gt || eq ? 1 : 0 );
+					if     ( op == Operator.CoE ) _valueStack.Push( eq       ? one : zer );
+					else if( op == Operator.CoN ) _valueStack.Push( eq       ? zer : one );
+					else if( op == Operator.CoL ) _valueStack.Push( lt       ? one : zer );
+					else if( op == Operator.CLE ) _valueStack.Push( lt || eq ? one : zer );
+					else if( op == Operator.CoG ) _valueStack.Push( gt       ? one : zer );
+					else if( op == Operator.CGE ) _valueStack.Push( gt || eq ? one : zer );
 					
 					break;
 					
@@ -482,20 +479,20 @@ namespace W3b.Sine {
 					switch(op) {
 						case Operator.And:
 							
-							Boolean and = binA == 1 && binB == 1;
-							_valueStack.Push( and ? 1 : 0 );
+							Boolean and = binA == one && binB == one;
+							_valueStack.Push( and ? one : zer );
 							break;
 							
 						case Operator.Or:
 							
-							Boolean or  = binA == 1 || binB == 1;
-							_valueStack.Push( or  ? 1 : 0 );
+							Boolean or  = binA == one || binB == one;
+							_valueStack.Push( or  ? one : zer );
 							break;
 							
 						case Operator.Xor:
 							
-							Boolean xor = (binA == 1 && binB != 1) || (binA != 1 && binB == 1);
-							_valueStack.Push( xor ? 1 : 0 );
+							Boolean xor = (binA == one && binB != one) || (binA != one && binB == one);
+							_valueStack.Push( xor ? one : zer );
 							break;
 							
 					}
@@ -506,8 +503,8 @@ namespace W3b.Sine {
 					
 					EnsureVal(1);
 					BigNum notA = _valueStack.Pop();
-					if(notA == 1) notA = 0;
-					else          notA = 1;
+					if(notA == one) notA = zer;
+					else            notA = one;
 					
 					_valueStack.Push( notA );
 					
